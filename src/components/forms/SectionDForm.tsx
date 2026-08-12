@@ -30,7 +30,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
     lita: initialData?.lita || requestData?.litres || 0,
     gariNumber: initialData?.gariNumber || requestData?.vehicleNumber || '',
     cheo: initialData?.cheo || '',
-    saini: initialData?.saini || '',
+    saini: initialData?.saini || 'Confirmed electronically',
     tarehe: initialData?.tarehe || new Date().toISOString().split('T')[0],
   })
 
@@ -113,7 +113,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
               placeholder="0.0"
               min="0"
               step="0.1"
-              required
+              readOnly
               disabled={isRejected}
             />
           </div>

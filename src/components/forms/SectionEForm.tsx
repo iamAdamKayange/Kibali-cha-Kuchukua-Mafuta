@@ -33,7 +33,7 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
     tokenNumber: initialData?.tokenNumber || '',
     jina: initialData?.jina || '',
     cheo: initialData?.cheo || '',
-    saini: initialData?.saini || '',
+    saini: initialData?.saini || 'Confirmed electronically',
     tarehe: initialData?.tarehe || new Date().toISOString().split('T')[0],
   })
 
@@ -114,7 +114,7 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
               placeholder="0.0"
               min="0"
               step="0.1"
-              required
+              readOnly
             />
           </div>
         </div>

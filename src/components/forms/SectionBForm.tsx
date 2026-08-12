@@ -31,7 +31,7 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
     sababu: initialData?.sababu || '',
     jina: initialData?.jina || '',
     cheo: initialData?.cheo || '',
-    saini: initialData?.saini || '',
+    saini: initialData?.saini || 'Confirmed electronically',
     tarehe: initialData?.tarehe || new Date().toISOString().split('T')[0],
   })
 
@@ -131,7 +131,7 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
               onChange={(e) => setFormData({ ...formData, jina: e.target.value })}
               className="input-field pl-10"
               placeholder="Ingiza jina kamili"
-              required
+              readOnly
             />
           </div>
         </div>

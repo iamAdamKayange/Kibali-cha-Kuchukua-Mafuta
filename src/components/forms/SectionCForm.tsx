@@ -34,7 +34,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
     logbookNamba: initialData?.logbookNamba || '',
     to: initialData?.to || '',
     cheo: initialData?.cheo || '',
-    saini: initialData?.saini || '',
+    saini: initialData?.saini || 'Confirmed electronically',
     tarehe: initialData?.tarehe || new Date().toISOString().split('T')[0],
   })
 
@@ -117,7 +117,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
               placeholder="0.0"
               min="0"
               step="0.1"
-              required
+              readOnly
               disabled={isRejected}
             />
           </div>

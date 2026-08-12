@@ -2,31 +2,60 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Search, UserPlus, Users } from 'lucide-react'
+import { Edit3, Search, Trash2, UserPlus, Users, X } from 'lucide-react'
 import { Sidebar } from '@/components/common/Sidebar'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { Toast } from '@/components/common/Toast'
 import { api } from '@/lib/api'
 import type { User } from '@/types'
+
+interface DepartmentOption {
+  id: string
+  name: string
+}
+
+const roles = ['ADMIN', 'DRIVER', 'HEAD_OF_DEPARTMENT', 'TRANSPORT_OFFICER', 'ADA_DAHRM', 'PROCUREMENT']
+
+function departmentName(user: User) {
+  const department = (user as any).department
+  if (!department) return 'N/A'
+  return typeof department === 'string' ? department : department.name
+}
 
 export default function AdminUsersPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [users, setUsers] = useState<User[]>([])
+  const [departments, setDepartments] = useState<DepartmentOption[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role: 'DRIVER',
+    departmentId: '',
+    isActive: true,
+  })
+
+  const fetchUsers = async () => {
+    setLoading(true)
+    const response = await api.get<User[]>('/admin/users?limit=100')
+    if (response.success && response.data) setUsers(response.data)
+    else setError(response.error || 'Failed to fetch users')
+    setLoading(false)
+  }
 
   useEffect(() => {
-    api
-      .get<User[]>('/users')
-      .then((response) => {
-        if (response.success && response.data) {
-          setUsers(response.data)
-          return
-        }
-        setError(response.error || 'Failed to fetch users')
-      })
-      .finally(() => setLoading(false))
+    fetchUsers()
+    api.get<DepartmentOption[]>('/departments').then((response) => {
+      if (response.success && response.data) setDepartments(response.data)
+    })
   }, [])
 
   const filteredUsers = useMemo(() => {
@@ -34,7 +63,7 @@ export default function AdminUsersPage() {
     if (!term) return users
 
     return users.filter((user) =>
-      [user.firstName, user.lastName, user.email, user.phone, user.role, user.department]
+      [user.firstName, user.lastName, user.email, user.phone, user.role, departmentName(user)]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -42,8 +71,67 @@ export default function AdminUsersPage() {
     )
   }, [search, users])
 
+  const openEdit = (user: User) => {
+    setEditingUser(user)
+    setForm({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      role: user.role as string,
+      departmentId: (user as any).departmentId || ((user as any).department?.id || ''),
+      isActive: user.isActive,
+    })
+  }
+
+  const saveUser = async () => {
+    if (!editingUser) return
+    setSaving(true)
+    const response = await api.patch<User>(`/admin/users/${editingUser.id}`, {
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone || null,
+      role: form.role,
+      departmentId: form.departmentId || null,
+      isActive: form.isActive,
+    })
+    setSaving(false)
+
+    if (!response.success || !response.data) {
+      setToast({ type: 'error', message: response.error || 'Failed to update user' })
+      return
+    }
+
+    setUsers((items) => items.map((item) => (item.id === response.data!.id ? response.data! : item)))
+    setEditingUser(null)
+    setToast({ type: 'success', message: 'User updated successfully.' })
+  }
+
+  const deleteUser = async (user: User) => {
+    if (!confirm(`Delete or deactivate ${user.email}?`)) return
+    const response = await api.delete<{ deleted: boolean; deactivated: boolean; user?: User }>(`/admin/users/${user.id}`)
+
+    if (!response.success) {
+      setToast({ type: 'error', message: response.error || 'Failed to delete user' })
+      return
+    }
+
+    if (response.data?.deleted) {
+      setUsers((items) => items.filter((item) => item.id !== user.id))
+      setToast({ type: 'success', message: 'User deleted successfully.' })
+      return
+    }
+
+    if (response.data?.user) {
+      setUsers((items) => items.map((item) => (item.id === user.id ? response.data!.user! : item)))
+    }
+    setToast({ type: 'success', message: 'User has history, so they were deactivated instead.' })
+  }
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
       <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -53,12 +141,9 @@ export default function AdminUsersPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Watumiaji Wote</h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">Simamia watumiaji waliopo kwenye mfumo.</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">Edit, deactivate, or delete users.</p>
             </div>
-            <Link
-              href="/dashboard/admin/register"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-medium transition-all duration-200"
-            >
+            <Link href="/dashboard/admin/register" className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-medium transition-all duration-200">
               <UserPlus className="w-5 h-5" />
               Sajili Mtumiaji
             </Link>
@@ -67,26 +152,15 @@ export default function AdminUsersPage() {
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Tafuta jina, email, role, au idara..."
-                className="input-field pl-10"
-              />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tafuta jina, email, role, au idara..." className="input-field pl-10" />
             </div>
           </div>
 
-          {error && (
-            <div className="mb-6 rounded-xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700 dark:border-danger-900/40 dark:bg-danger-900/20 dark:text-danger-300">
-              {error}
-            </div>
-          )}
+          {error && <div className="mb-6 rounded-xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700 dark:border-danger-900/40 dark:bg-danger-900/20 dark:text-danger-300">{error}</div>}
 
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
             {loading ? (
-              <div className="flex justify-center py-16">
-                <LoadingSpinner size="lg" />
-              </div>
+              <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
             ) : filteredUsers.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -97,25 +171,26 @@ export default function AdminUsersPage() {
                       <th className="px-4 py-3 font-medium">Role</th>
                       <th className="px-4 py-3 font-medium">Idara</th>
                       <th className="px-4 py-3 font-medium">Hali</th>
+                      <th className="px-4 py-3 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {filteredUsers.map((user) => (
                       <tr key={user.id} className="text-gray-700 dark:text-gray-300">
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                          {[user.firstName, user.lastName].filter(Boolean).join(' ') || 'N/A'}
-                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'N/A'}</td>
                         <td className="px-4 py-3">{user.email}</td>
                         <td className="px-4 py-3">{user.role}</td>
-                        <td className="px-4 py-3">{String(user.department || 'N/A')}</td>
+                        <td className="px-4 py-3">{departmentName(user)}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                            user.isActive
-                              ? 'bg-success-50 text-success-700 dark:bg-success-900/20 dark:text-success-300'
-                              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                          }`}>
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${user.isActive ? 'bg-success-50 text-success-700 dark:bg-success-900/20 dark:text-success-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}>
                             {user.isActive ? 'Active' : 'Inactive'}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2">
+                            <button onClick={() => openEdit(user)} className="rounded-lg p-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20"><Edit3 className="w-4 h-4" /></button>
+                            <button onClick={() => deleteUser(user)} className="rounded-lg p-2 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20"><Trash2 className="w-4 h-4" /></button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -123,14 +198,43 @@ export default function AdminUsersPage() {
                 </table>
               </div>
             ) : (
-              <div className="p-12 text-center">
-                <Users className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Hakuna watumiaji waliopatikana.</h2>
-              </div>
+              <div className="p-12 text-center"><Users className="w-10 h-10 text-gray-400 mx-auto mb-3" /><h2 className="text-lg font-semibold text-gray-900 dark:text-white">Hakuna watumiaji waliopatikana.</h2></div>
             )}
           </div>
         </main>
       </div>
+
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-950">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edit user</h2>
+              <button onClick={() => setEditingUser(null)} className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <input className="input-field" placeholder="First name" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+              <input className="input-field" placeholder="Last name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+              <input className="input-field" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <input className="input-field" placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <select className="input-field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                {roles.map((role) => <option key={role} value={role}>{role}</option>)}
+              </select>
+              <select className="input-field" value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })}>
+                <option value="">No department</option>
+                {departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+              </select>
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+                Active
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button onClick={() => setEditingUser(null)} className="rounded-xl border border-gray-200 px-5 py-3 text-sm dark:border-gray-700 dark:text-gray-200">Cancel</button>
+              <button onClick={saveUser} disabled={saving} className="btn-primary px-5 py-3 text-sm">{saving ? 'Saving...' : 'Save changes'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

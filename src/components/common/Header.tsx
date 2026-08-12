@@ -128,9 +128,9 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                     ))}
                   </div>
                   <div className="p-3 border-t border-gray-200 dark:border-gray-800 text-center">
-                    <button className="text-sm text-primary-500 hover:text-primary-600 font-medium">
+                    <Link href="/notifications" className="text-sm text-primary-500 hover:text-primary-600 font-medium">
                       {t('viewAllNotifications')}
-                    </button>
+                    </Link>
                   </div>
                 </motion.div>
               )}
