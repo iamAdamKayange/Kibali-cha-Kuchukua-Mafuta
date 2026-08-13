@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/common/Sidebar'
 import { Header } from '@/components/common/Header'
 import { UserRegistrationForm } from '@/components/admin/UserRegistrationForm'
@@ -10,14 +9,7 @@ import { ArrowLeft, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AdminRegisterPage() {
-  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(true)
-
-  const handleSubmit = async (data: any) => {
-    console.log('User registered:', data)
-    // Show success message or redirect
-    router.push('/dashboard/admin')
-  }
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
@@ -62,7 +54,7 @@ export default function AdminRegisterPage() {
                 </span>
               </div>
 
-              <UserRegistrationForm onSubmit={handleSubmit} />
+              <UserRegistrationForm />
             </motion.div>
           </div>
         </main>

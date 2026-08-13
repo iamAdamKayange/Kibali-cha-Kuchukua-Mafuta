@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Download, Share, Smartphone, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { motion } from 'framer-motion'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -88,7 +89,12 @@ export function PWAInstallPrompt() {
   }
 
   return (
-    <div className="mx-4 mt-4 rounded-2xl border border-primary-200 bg-primary-50 p-4 shadow-sm dark:border-primary-900/50 dark:bg-primary-950/40">
+    <motion.div
+      initial={{ opacity: 0, y: -12, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.28, ease: 'easeOut' }}
+      className="mx-4 mt-4 rounded-2xl border border-primary-200 bg-primary-50/95 p-4 shadow-xl shadow-primary-900/5 backdrop-blur-xl dark:border-primary-900/50 dark:bg-primary-950/40"
+    >
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex gap-3">
           <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500 text-white">
@@ -105,7 +111,7 @@ export function PWAInstallPrompt() {
             <button
               type="button"
               onClick={handleInstall}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+            className="tap-target inline-flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600"
             >
               <Download className="h-4 w-4" />
               {copy.install}
@@ -126,6 +132,6 @@ export function PWAInstallPrompt() {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

@@ -74,10 +74,10 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Desktop keeps the full navigation; phones use the bottom app menu. */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 hidden"
           onClick={onClose}
         />
       )}
@@ -86,7 +86,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
         initial={{ x: -280 }}
         animate={{ x: isOpen ? 0 : -280 }}
         transition={{ duration: 0.3, type: 'spring', stiffness: 300, damping: 30 }}
-        className={`fixed left-0 top-0 h-full w-[280px] bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 z-50 flex flex-col ${
+        className={`fixed left-0 top-0 hidden h-full w-[280px] bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 z-50 flex-col lg:flex ${
           isOpen ? 'lg:relative lg:translate-x-0' : 'lg:relative lg:translate-x-0'
         }`}
       >

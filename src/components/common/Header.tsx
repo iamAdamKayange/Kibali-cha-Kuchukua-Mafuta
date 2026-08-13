@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Menu, Bell, User, ChevronDown, Search, X, Settings, LogOut } from 'lucide-react'
+import { Bell, User, ChevronDown, Search, X, Settings, LogOut, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from '@/components/i18n/LanguageToggle'
@@ -22,14 +22,17 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
   const [showProfile, setShowProfile] = useState(false)
   const { language, t } = useLanguage()
 
-  const notifications = [
+  const [notifications, setNotifications] = useState([
     { id: 1, title: 'Ombi #FR-00241 limewasilishwa', time: 'Dakika 5 zilizopita', read: false },
     { id: 2, title: 'Idhini ya Mkuu wa Idara imekamilika', time: 'Saa 2 zilizopita', read: false },
     { id: 3, title: 'Ombi #FR-00239 limekataliwa', time: 'Saa 5 zilizopita', read: true },
     { id: 4, title: 'Mafuta yametolewa kwa ombi #FR-00238', time: 'Saa 8 zilizopita', read: true },
-  ]
+  ])
 
   const unreadCount = notifications.filter(n => !n.read).length
+  const deleteLocalNotification = (id: number) => {
+    setNotifications((items) => items.filter((item) => item.id !== id))
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
@@ -38,10 +41,9 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
         <div className="flex items-center gap-4">
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 lg:hidden"
+            className="hidden"
             aria-label="Toggle sidebar"
           >
-            <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
           <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
@@ -109,8 +111,14 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                   </div>
                   <div className="max-h-64 overflow-y-auto">
                     {notifications.map((notif) => (
-                      <div
+                      <motion.div
                         key={notif.id}
+                        drag="x"
+                        dragConstraints={{ left: -96, right: 0 }}
+                        dragElastic={0.08}
+                        onDragEnd={(_, info) => {
+                          if (info.offset.x < -72) deleteLocalNotification(notif.id)
+                        }}
                         className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 ${
                           !notif.read ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''
                         }`}
@@ -119,12 +127,23 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                           <div className={`w-2 h-2 rounded-full mt-1.5 ${
                             !notif.read ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
                           }`} />
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <p className="text-sm text-gray-900 dark:text-white">{notif.title}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{notif.time}</p>
                           </div>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              deleteLocalNotification(notif.id)
+                            }}
+                            className="rounded-lg p-1.5 text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20"
+                            aria-label="Delete notification"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                   <div className="p-3 border-t border-gray-200 dark:border-gray-800 text-center">
