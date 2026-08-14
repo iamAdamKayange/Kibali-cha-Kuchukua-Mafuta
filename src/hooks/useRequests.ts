@@ -95,8 +95,18 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
       const response = await api.get<FuelRequest[]>(`/fuel-requests?${queryParams.toString()}`)
 
       if (response.success && response.data) {
-        setRequests(response.data)
-        setTotal(response.pagination?.total || response.data.length)
+        // Defensive: guarantee `requests` is always an array even if the
+        // backend response shape changes (e.g. a wrapped/paginated object
+        // instead of a raw array). Without this, .filter/.map/.reduce calls
+        // further down the tree would throw during render.
+        const list = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray((response.data as unknown as { requests?: FuelRequest[] })?.requests)
+            ? (response.data as unknown as { requests: FuelRequest[] }).requests
+            : []
+
+        setRequests(list)
+        setTotal(response.pagination?.total || list.length)
         setTotalPages(response.pagination?.totalPages || 1)
         return
       }

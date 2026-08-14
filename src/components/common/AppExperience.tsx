@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   Bell,
   FileText,
@@ -67,18 +67,18 @@ export function AppExperience({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={pathname}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.16, ease: 'easeOut' }}
-          className={showBottomNav ? 'pb-24 lg:pb-0' : undefined}
-        >
-          {showSkeleton ? <AppRouteSkeleton /> : children}
-        </motion.div>
-      </AnimatePresence>
+      {/*
+        IMPORTANT: this used to be an AnimatePresence + motion.div keyed by
+        pathname. That pattern can leave a client-side navigation's new page
+        stuck at opacity:0 (a white screen) if framer-motion's exit/enter
+        tracking gets interrupted mid-transition - which is exactly the bug
+        that was reported. A plain CSS keyframe fade (below, in globals.css)
+        cannot get "stuck" like that: it always runs to completion and ends
+        at opacity 1, and content is never hidden behind animation state.
+      */}
+      <div key={pathname} className={`app-page-fade ${showBottomNav ? 'pb-24 lg:pb-0' : ''}`}>
+        {showSkeleton ? <AppRouteSkeleton /> : children}
+      </div>
 
       {showBottomNav && (
         <nav className="fixed inset-x-3 bottom-3 z-50 lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>

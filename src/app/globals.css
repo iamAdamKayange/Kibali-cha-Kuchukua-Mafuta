@@ -77,3 +77,30 @@
     @apply transition-transform duration-200 active:scale-[0.96];
   }
 }
+
+/*
+ * Page-transition fade used by AppExperience for route changes.
+ * Deliberately plain CSS (not framer-motion/JS-driven) so it can never get
+ * stuck mid-animation and hide a newly-navigated page (white screen bug).
+ * animation-fill-mode: forwards guarantees it always settles at opacity: 1.
+ */
+@keyframes app-page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-page-fade {
+  animation: app-page-fade-in 0.18s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-page-fade {
+    animation: none;
+  }
+}

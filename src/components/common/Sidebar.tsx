@@ -72,9 +72,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
         initial={{ x: -280 }}
         animate={{ x: isOpen ? 0 : -280 }}
         transition={{ duration: 0.3, type: 'spring', stiffness: 300, damping: 30 }}
-        className={`fixed left-0 top-0 hidden h-full w-[280px] bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 z-50 flex-col lg:flex ${
-          isOpen ? 'lg:relative lg:translate-x-0' : 'lg:relative lg:translate-x-0'
-        }`}
+        className="fixed left-0 top-0 hidden h-full w-[280px] bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 z-50 flex-col lg:relative lg:flex lg:translate-x-0"
       >
         {/* Logo */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-800">
