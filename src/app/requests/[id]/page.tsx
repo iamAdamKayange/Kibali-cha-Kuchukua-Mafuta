@@ -32,7 +32,6 @@ interface ApprovalRecord {
 }
 
 interface DetailRequest extends FuelRequest {
-  department?: string | { id: string; name: string }
   approvals?: ApprovalRecord[]
 }
 
@@ -188,46 +187,72 @@ export default function RequestDetailPage() {
     router.refresh()
   }
 
-  const submitHead = async (data: SectionBData) => {
-    setActionError('')
-    const result = data.idhini === 'naridhia'
-      ? await approveRequest(id, 'head', { approved: true, reason: data.sababu, designation: data.cheo, ...audit })
+const submitHead = async (data: SectionBData) => {
+  setActionError('')
+
+  const result =
+    data.idhini === 'naridhia'
+      ? await approveRequest(id, 'head', {
+          ...audit,
+          approved: true,
+          reason: data.sababu,
+          designation: data.cheo,
+        })
       : await rejectRequest(id, 'head', data.sababu)
-    if (result) await afterAction()
-    else setActionError('Action failed. Please check the reason/designation and try again.')
-  }
 
-  const submitTransport = async (data: SectionCData) => {
-    setActionError('')
-    const result = data.apewe
-      ? await approveRequest(id, 'transport', {
-          approved: true,
-          litresApproved: data.lita,
-          reason: data.sababu,
-          logbookNumber: data.logbookNamba,
-          logbookTo: data.to,
-          designation: data.cheo,
-          ...audit,
-        })
-      : await rejectRequest(id, 'transport', data.sababu)
-    if (result) await afterAction()
-    else setActionError('Action failed. Please check the required fields and try again.')
+  if (result) {
+    await afterAction()
+  } else {
+    setActionError(
+      'Action failed. Please check the reason/designation and try again.'
+    )
   }
+}
+const submitTransport = async (data: SectionCData) => {
+  setActionError('')
 
-  const submitAda = async (data: SectionDData) => {
-    setActionError('')
-    const result = data.naridhia
-      ? await approveRequest(id, 'ada', {
-          approved: true,
-          litresApproved: data.lita,
-          reason: data.sababu,
-          designation: data.cheo,
-          ...audit,
-        })
-      : await rejectRequest(id, 'ada', data.sababu)
-    if (result) await afterAction()
-    else setActionError('Action failed. Please check the required fields and try again.')
+  const result = data.apewe
+    ? await approveRequest(id, 'transport', {
+        ...audit,
+        approved: true,
+        litresApproved: data.lita,
+        reason: data.sababu,
+        logbookNumber: data.logbookNamba,
+        logbookTo: data.to,
+        designation: data.cheo,
+      })
+    : await rejectRequest(id, 'transport', data.sababu)
+
+  if (result) {
+    await afterAction()
+  } else {
+    setActionError(
+      'Action failed. Please check the required fields and try again.'
+    )
   }
+}
+
+const submitAda = async (data: SectionDData) => {
+  setActionError('')
+
+  const result = data.naridhia
+    ? await approveRequest(id, 'ada', {
+        ...audit,
+        approved: true,
+        litresApproved: data.lita,
+        reason: data.sababu,
+        designation: data.cheo,
+      })
+    : await rejectRequest(id, 'ada', data.sababu)
+
+  if (result) {
+    await afterAction()
+  } else {
+    setActionError(
+      'Action failed. Please check the required fields and try again.'
+    )
+  }
+}
 
   const submitIssue = async (data: SectionEData) => {
     setActionError('')
