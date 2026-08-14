@@ -18,7 +18,7 @@ interface DepartmentOption {
 const roles = ['ADMIN', 'DRIVER', 'HEAD_OF_DEPARTMENT', 'TRANSPORT_OFFICER', 'ADA_DAHRM', 'PROCUREMENT']
 
 function departmentName(user: User) {
-  const department = (user as any).department
+  const department = user.department
   if (!department) return 'N/A'
   return typeof department === 'string' ? department : department.name
 }
@@ -41,6 +41,7 @@ export default function AdminUsersPage() {
     role: 'DRIVER',
     departmentId: '',
     isActive: true,
+    password: '',
   })
 
   const fetchUsers = async () => {
@@ -79,8 +80,9 @@ export default function AdminUsersPage() {
       email: user.email || '',
       phone: user.phone || '',
       role: user.role as string,
-      departmentId: (user as any).departmentId || ((user as any).department?.id || ''),
+      departmentId: user.departmentId || (typeof user.department === 'object' && user.department ? user.department.id : ''),
       isActive: user.isActive,
+      password: '',
     })
   }
 
@@ -95,6 +97,7 @@ export default function AdminUsersPage() {
       role: form.role,
       departmentId: form.departmentId || null,
       isActive: form.isActive,
+      password: form.password || undefined,
     })
     setSaving(false)
 
@@ -216,6 +219,7 @@ export default function AdminUsersPage() {
               <input className="input-field" placeholder="Last name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
               <input className="input-field" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               <input className="input-field" placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <input className="input-field" placeholder="New password (optional)" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
               <select className="input-field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                 {roles.map((role) => <option key={role} value={role}>{role}</option>)}
               </select>

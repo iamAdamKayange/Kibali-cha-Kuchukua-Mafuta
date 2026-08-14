@@ -1,15 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Fuel, User, Briefcase, Calendar, Edit3, Hash, CheckCircle } from 'lucide-react'
+import { Fuel, User, Briefcase, Calendar, Hash, CheckCircle } from 'lucide-react'
 
-interface SectionEData {
+export interface SectionEData {
   fuelType: 'Diesel' | 'Petrol'
   lita: number
   tokenNumber: string
   jina: string
   cheo: string
-  saini: string
   tarehe: string
 }
 
@@ -33,7 +32,6 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
     tokenNumber: initialData?.tokenNumber || '',
     jina: initialData?.jina || '',
     cheo: initialData?.cheo || '',
-    saini: initialData?.saini || 'Confirmed electronically',
     tarehe: initialData?.tarehe || new Date().toISOString().split('T')[0],
   })
 
@@ -182,20 +180,8 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
           </div>
         </div>
 
-        {/* Saini */}
-        <div>
-          <label className="input-label">Saini</label>
-          <div className="relative">
-            <Edit3 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={formData.saini}
-              onChange={(e) => setFormData({ ...formData, saini: e.target.value })}
-              className="input-field pl-10"
-              placeholder="Weka saini yako"
-              required
-            />
-          </div>
+        <div className="rounded-xl border border-success-100 bg-success-50/70 p-4 text-sm text-gray-700 dark:border-success-900/40 dark:bg-success-900/10 dark:text-gray-200">
+          Utoaji huu utahifadhiwa kidigitali pamoja na jina, role, token na tarehe/saa ya mtumiaji aliyeingia.
         </div>
       </div>
 

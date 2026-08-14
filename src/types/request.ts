@@ -20,7 +20,7 @@ export interface FuelRequest {
   }
   applicantId: string
   applicantName: string
-  department: string
+  department: string | { id: string; name: string }
   fuelType: FuelType | string
   litres: number
   requestedLitres?: number

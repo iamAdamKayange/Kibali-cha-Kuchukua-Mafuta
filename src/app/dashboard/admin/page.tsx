@@ -1,181 +1,201 @@
 'use client'
 
-import { useState } from 'react'
-import { Sidebar } from '@/components/common/Sidebar'
-import { Header } from '@/components/common/Header'
-import { motion } from 'framer-motion'
-import { Users, UserPlus, Activity, BarChart3, TrendingUp, Clock } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { Activity, BarChart3, Clock, FileText, Fuel, UserPlus, Users } from 'lucide-react'
+import { Header } from '@/components/common/Header'
+import { Sidebar } from '@/components/common/Sidebar'
+import { WorkflowGuide } from '@/components/dashboard/WorkflowGuide'
+import { getUserDisplayName, useAuth } from '@/contexts/AuthContext'
+import { api } from '@/lib/api'
+import type { FuelRequest, User } from '@/types'
+
+interface AdminStats {
+  users: {
+    total: number
+    active: number
+    inactive: number
+  }
+  requests: {
+    total: number
+    pending: number
+    completed: number
+  }
+  fuel: {
+    totalIssued: number
+  }
+}
+
+const emptyStats: AdminStats = {
+  users: { total: 0, active: 0, inactive: 0 },
+  requests: { total: 0, pending: 0, completed: 0 },
+  fuel: { totalIssued: 0 },
+}
+
+function fullName(user: User) {
+  return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email
+}
 
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [stats, setStats] = useState<AdminStats>(emptyStats)
+  const [users, setUsers] = useState<User[]>([])
+  const [requests, setRequests] = useState<FuelRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const { user } = useAuth()
 
-  const stats = [
-    { label: 'Watumiaji Wote', value: 45, icon: Users, color: 'text-primary-500' },
-    { label: 'Watumiaji Wapya (Mwenzu)', value: 8, icon: UserPlus, color: 'text-success-500' },
-    { label: 'Maombi Yote', value: 156, icon: Activity, color: 'text-blue-500' },
-    { label: 'Maombi Yanasubiri', value: 12, icon: Clock, color: 'text-warning-500' },
-  ]
+  useEffect(() => {
+    let mounted = true
 
-  const recentActivities = [
-    { id: 1, action: 'Mwombaji mpya amesajiliwa', user: 'Admin', time: 'Dakika 5 zilizopita' },
-    { id: 2, action: 'Ombi #FR-00241 limewasilishwa', user: 'Adam Mwakyoma', time: 'Saa 1 zilizopita' },
-    { id: 3, action: 'Mkuu wa Idara ameidhinisha ombi #FR-00240', user: 'John Doe', time: 'Saa 3 zilizopita' },
-    { id: 4, action: 'Mafuta yametolewa kwa ombi #FR-00238', user: 'Ununuzi na Ugavi', time: 'Saa 5 zilizopita' },
-  ]
+    async function fetchDashboard() {
+      setLoading(true)
+      setError('')
 
-  const roleDistribution = [
-    { role: 'Mwombaji/Dereva', count: 18, color: 'bg-blue-500' },
-    { role: 'Mkuu wa Idara', count: 8, color: 'bg-green-500' },
-    { role: 'Afisa Usafirishaji', count: 6, color: 'bg-yellow-500' },
-    { role: 'ADA/DAHRM', count: 7, color: 'bg-purple-500' },
-    { role: 'Ununuzi na Ugavi', count: 6, color: 'bg-red-500' },
+      const [statsResponse, usersResponse, requestsResponse] = await Promise.all([
+        api.get<AdminStats>('/admin/stats'),
+        api.get<User[]>('/admin/users?limit=8'),
+        api.get<FuelRequest[]>('/fuel-requests?limit=8'),
+      ])
+
+      if (!mounted) return
+
+      if (statsResponse.success && statsResponse.data) setStats(statsResponse.data)
+      else setError(statsResponse.error || 'Failed to load admin statistics')
+
+      if (usersResponse.success && usersResponse.data) setUsers(usersResponse.data)
+      if (requestsResponse.success && requestsResponse.data) setRequests(requestsResponse.data)
+
+      setLoading(false)
+    }
+
+    fetchDashboard()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const roleDistribution = useMemo(() => {
+    const counts = users.reduce<Record<string, number>>((acc, item) => {
+      acc[String(item.role)] = (acc[String(item.role)] || 0) + 1
+      return acc
+    }, {})
+
+    return Object.entries(counts).map(([role, count]) => ({ role, count }))
+  }, [users])
+
+  const statCards = [
+    { label: 'Watumiaji Wote', value: stats.users.total, icon: Users, color: 'text-primary-500' },
+    { label: 'Watumiaji Active', value: stats.users.active, icon: UserPlus, color: 'text-success-500' },
+    { label: 'Maombi Yote', value: stats.requests.total, icon: Activity, color: 'text-blue-500' },
+    { label: 'Maombi Yanasubiri', value: stats.requests.pending, icon: Clock, color: 'text-warning-500' },
+    { label: 'Maombi Yamekamilika', value: stats.requests.completed, icon: FileText, color: 'text-success-500' },
+    { label: 'Lita Zilizotolewa', value: stats.fuel.totalIssued, icon: Fuel, color: 'text-cyan-500' },
   ]
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
       <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-          user={{ name: 'Msimamizi', role: 'Admin' }}
-        />
-        
+        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} user={{ name: getUserDisplayName(user), role: 'Admin' }} />
+
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {/* Welcome */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Dashibodi ya Msimamizi
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Hakikisha na usimamizi wa watumiaji na shughuli za mfumo
-            </p>
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashibodi ya Msimamizi</h1>
+              <p className="mt-1 text-gray-500 dark:text-gray-400">Watumiaji, maombi, takwimu na activity ya mfumo kutoka backend.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/dashboard/admin/register" className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-3 font-medium text-white transition hover:bg-primary-600">
+                <UserPlus className="h-5 w-5" />
+                Sajili Mtumiaji
+              </Link>
+              <Link href="/dashboard/admin/reports" className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
+                <BarChart3 className="h-5 w-5" />
+                Ripoti
+              </Link>
+            </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {stats.map((stat, index) => (
+          <WorkflowGuide currentRole="admin" />
+
+          {error && (
+            <div className="mb-6 rounded-xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700 dark:border-danger-900/40 dark:bg-danger-900/20 dark:text-danger-300">
+              {error}
+            </div>
+          )}
+
+          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-6">
+            {statCards.map((stat, index) => (
               <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
+                key={stat.label}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="glass-card rounded-xl p-4"
+                transition={{ delay: index * 0.04 }}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg bg-primary-50 dark:bg-primary-900/20`}>
-                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
-                  </div>
-                </div>
+                <stat.icon className={`mb-3 h-5 w-5 ${stat.color}`} />
+                <p className="text-2xl font-black text-gray-900 dark:text-white">{loading ? '...' : stat.value}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
               </motion.div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Quick Actions */}
-            <div className="lg:col-span-2">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="glass-card rounded-2xl p-6"
-              >
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Vitendo vya Haraka
-                </h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <Link
-                    href="/dashboard/admin/register"
-                    className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors duration-200"
-                  >
-                    <UserPlus className="w-6 h-6 text-primary-500 mb-2" />
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Sajili Mtumiaji</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Ongeza mtumiaji mpya</p>
-                  </Link>
-                  <Link
-                    href="/dashboard/admin/users"
-                    className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-                  >
-                    <Users className="w-6 h-6 text-gray-500 dark:text-gray-400 mb-2" />
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Watumiaji Wote</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Angalia orodha ya watumiaji</p>
-                  </Link>
-                  <Link
-                    href="/dashboard/admin/reports"
-                    className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-                  >
-                    <BarChart3 className="w-6 h-6 text-gray-500 dark:text-gray-400 mb-2" />
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Taarifa</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Angalia ripoti za mfumo</p>
-                  </Link>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl opacity-50">
-                    <TrendingUp className="w-6 h-6 text-gray-400 mb-2" />
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Takwimu</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Inakuja...</p>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Role Distribution */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="glass-card rounded-2xl p-6"
-            >
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Mgawanyo wa Majukumu
-              </h2>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-span-2">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Activity ya Hivi Karibuni</h2>
+                <Link href="/dashboard/admin/users" className="text-sm font-medium text-primary-600 dark:text-primary-400">Watumiaji wote</Link>
+              </div>
               <div className="space-y-3">
-                {roleDistribution.map((item, index) => (
-                  <div key={index}>
-                    <div className="flex items-center justify-between text-sm mb-1">
+                {requests.length > 0 ? requests.map((request) => (
+                  <div key={request.id} className="flex items-center justify-between rounded-xl bg-gray-50 p-3 text-sm dark:bg-gray-950/60">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{request.requestNumber}</p>
+                      <p className="text-gray-500 dark:text-gray-400">{request.applicantName || request.driver?.firstName || 'Mwombaji'} - {request.status}</p>
+                    </div>
+                    <span className="text-xs text-gray-400">{new Date(request.createdAt).toLocaleDateString('sw-TZ')}</span>
+                  </div>
+                )) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Hakuna activity ya maombi bado.</p>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+              <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Mgawanyo wa Roles</h2>
+              <div className="space-y-3">
+                {roleDistribution.length > 0 ? roleDistribution.map((item) => (
+                  <div key={item.role}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
                       <span className="text-gray-700 dark:text-gray-300">{item.role}</span>
                       <span className="font-medium text-gray-900 dark:text-white">{item.count}</span>
                     </div>
-                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                        style={{ width: `${(item.count / 45) * 100}%` }}
-                      />
+                    <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+                      <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.max((item.count / Math.max(users.length, 1)) * 100, 8)}%` }} />
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Hakuna watumiaji waliopatikana.</p>
+                )}
               </div>
-            </motion.div>
-          </div>
 
-          {/* Recent Activities */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-6 glass-card rounded-2xl p-6"
-          >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Shughuli za Hivi Karibuni
-            </h2>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0"
-                >
-                  <div>
-                    <p className="text-sm text-gray-900 dark:text-white">{activity.action}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Na: {activity.user}</p>
-                  </div>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">{activity.time}</span>
+              <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
+                <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Watumiaji Wapya</h3>
+                <div className="space-y-2">
+                  {users.slice(0, 4).map((item) => (
+                    <div key={item.id} className="text-sm">
+                      <p className="font-medium text-gray-900 dark:text-white">{fullName(item)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{item.role}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </motion.div>
+              </div>
+            </section>
+          </div>
         </main>
       </div>
     </div>

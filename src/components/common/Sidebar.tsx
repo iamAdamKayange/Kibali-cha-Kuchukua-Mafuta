@@ -4,25 +4,10 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useLanguage } from '@/contexts/LanguageContext'
-import {
-  LayoutDashboard,
-  FileText,
-  PlusCircle,
-  Users,
-  Settings,
-  LogOut,
-  Home,
-  CheckCircle,
-  Clock,
-  XCircle,
-  ListChecks,
-  Fuel,
-  UserPlus,
-  BarChart3,
-  ChevronDown,
-} from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { LayoutDashboard, FileText, PlusCircle, Users, Settings, LogOut, Clock, ListChecks, Fuel, UserPlus, BarChart3, type LucideIcon } from 'lucide-react'
 
-const navItems: Record<string, Array<{ icon: any; labelKey: string; href: string }>> = {
+const navItems: Record<string, Array<{ icon: LucideIcon; labelKey: string; href: string }>> = {
   admin: [
     { icon: LayoutDashboard, labelKey: 'dashboard', href: '/dashboard/admin' },
     { icon: UserPlus, labelKey: 'registerUsers', href: '/dashboard/admin/register' },
@@ -70,6 +55,7 @@ interface SidebarProps {
 export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const { t } = useLanguage()
+  const { logout } = useAuth()
   const items = navItems[role] || navItems.mwombaji
 
   return (
@@ -145,10 +131,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
             <span className="text-sm font-medium">{t('settings')}</span>
           </Link>
           <button
-            onClick={() => {
-              localStorage.removeItem('token')
-              window.location.href = '/login'
-            }}
+            onClick={logout}
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 w-full"
           >
             <LogOut className="w-5 h-5" />

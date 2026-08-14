@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from '@/components/i18n/LanguageToggle'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface HeaderProps {
   toggleSidebar: () => void
@@ -21,6 +22,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const { language, t } = useLanguage()
+  const { logout } = useAuth()
 
   const [notifications, setNotifications] = useState([
     { id: 1, title: 'Ombi #FR-00241 limewasilishwa', time: 'Dakika 5 zilizopita', read: false },
@@ -73,11 +75,6 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <LanguageToggle />
-
-          {/* Search (mobile) */}
-          <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 md:hidden">
-            <Search className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-          </button>
 
           {/* Notifications */}
           <div className="relative">
@@ -197,10 +194,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                       <span className="text-sm">{t('settings')}</span>
                     </Link>
                     <button
-                      onClick={() => {
-                        localStorage.removeItem('token')
-                        window.location.href = '/login'
-                      }}
+                      onClick={logout}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 w-full"
                     >
                       <LogOut className="w-4 h-4" />

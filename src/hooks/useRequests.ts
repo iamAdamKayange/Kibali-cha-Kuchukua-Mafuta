@@ -4,6 +4,31 @@ import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
 import type { FuelRequest, RequestFilter } from '@/types'
 
+interface ApprovalPayload {
+  approved: boolean
+  reason?: string
+  designation?: string
+  title?: string
+  litresApproved?: number
+  logbookNumber?: string
+  logbookTo?: string
+  auditAction?: 'APPROVE' | 'REJECT'
+  actionBy?: string
+  actionRole?: string
+  actionAt?: string
+}
+
+interface FuelIssuePayload {
+  fuelType: string
+  litresIssued: number
+  tokenNumber: string
+  designation?: string
+  auditAction?: 'ISSUE_FUEL'
+  actionBy?: string
+  actionRole?: string
+  actionAt?: string
+}
+
 interface UseRequestsOptions {
   autoFetch?: boolean
   initialFilters?: RequestFilter
@@ -23,13 +48,17 @@ interface UseRequestsReturn {
   fetchRequest: (id: string) => Promise<FuelRequest | null>
   createRequest: (data: Partial<FuelRequest>) => Promise<FuelRequest | null>
   updateRequest: (id: string, data: Partial<FuelRequest>) => Promise<FuelRequest | null>
-  approveRequest: (id: string, stage: string, data: any) => Promise<FuelRequest | null>
+  approveRequest: (id: string, stage: string, data: ApprovalPayload) => Promise<FuelRequest | null>
   rejectRequest: (id: string, stage: string, reason: string) => Promise<FuelRequest | null>
-  issueFuel: (id: string, data: any) => Promise<FuelRequest | null>
+  issueFuel: (id: string, data: FuelIssuePayload) => Promise<FuelRequest | null>
   setFilters: (filters: RequestFilter) => void
   setPage: (page: number) => void
   clearFilters: () => void
   refetch: () => Promise<void>
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'An error occurred'
 }
 
 export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn {
@@ -48,169 +77,164 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
   const [totalPages, setTotalPages] = useState(1)
   const [filters, setFilters] = useState<RequestFilter>(initialFilters)
 
-  // Fetch requests
   const fetchRequests = useCallback(async (newFilters?: RequestFilter) => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const currentFilters = newFilters || filters
       const queryParams = new URLSearchParams()
-      
-      // Add pagination
+
       queryParams.append('page', page.toString())
       queryParams.append('limit', limit.toString())
-      
-      // Add filters
-      if (currentFilters.status) {
-        queryParams.append('status', currentFilters.status)
-      }
-      if (currentFilters.dateFrom) {
-        queryParams.append('fromDate', currentFilters.dateFrom.toISOString())
-      }
-      if (currentFilters.dateTo) {
-        queryParams.append('toDate', currentFilters.dateTo.toISOString())
-      }
+
+      if (currentFilters.status) queryParams.append('status', currentFilters.status)
+      if (currentFilters.dateFrom) queryParams.append('fromDate', currentFilters.dateFrom.toISOString())
+      if (currentFilters.dateTo) queryParams.append('toDate', currentFilters.dateTo.toISOString())
 
       const response = await api.get<FuelRequest[]>(`/fuel-requests?${queryParams.toString()}`)
 
       if (response.success && response.data) {
         setRequests(response.data)
-        const pagination = (response as any).pagination
-        setTotal(pagination?.total || response.data.length)
-        setTotalPages(pagination?.totalPages || 1)
-      } else {
-        setError(response.error || 'Failed to fetch requests')
+        setTotal(response.pagination?.total || response.data.length)
+        setTotalPages(response.pagination?.totalPages || 1)
+        return
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+
+      setError(response.error || 'Failed to fetch requests')
+    } catch (err: unknown) {
+      setError(errorMessage(err))
     } finally {
       setLoading(false)
     }
   }, [page, limit, filters])
 
-  // Fetch single request
   const fetchRequest = useCallback(async (id: string): Promise<FuelRequest | null> => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const response = await api.get<FuelRequest>(`/fuel-requests/${id}`)
-      
-      if (response.success && response.data) {
-        return response.data
-      } else {
-        setError(response.error || 'Failed to fetch request')
-        return null
-      }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+
+      if (response.success && response.data) return response.data
+
+      setError(response.error || 'Failed to fetch request')
+      return null
+    } catch (err: unknown) {
+      setError(errorMessage(err))
       return null
     } finally {
       setLoading(false)
     }
   }, [])
 
-  // Create request
   const createRequest = useCallback(async (data: Partial<FuelRequest>): Promise<FuelRequest | null> => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const response = await api.post<FuelRequest>('/fuel-requests', data)
-      
+
       if (response.success && response.data) {
-        // Refresh list
         await fetchRequests()
         return response.data
-      } else {
-        setError(response.error || 'Failed to create request')
-        return null
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+
+      setError(response.error || 'Failed to create request')
+      return null
+    } catch (err: unknown) {
+      setError(errorMessage(err))
       return null
     } finally {
       setLoading(false)
     }
   }, [fetchRequests])
 
-  // Update request
   const updateRequest = useCallback(async (id: string, data: Partial<FuelRequest>): Promise<FuelRequest | null> => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const response = await api.put<FuelRequest>(`/fuel-requests/${id}`, data)
-      
+
       if (response.success && response.data) {
-        // Refresh list
         await fetchRequests()
         return response.data
-      } else {
-        setError(response.error || 'Failed to update request')
-        return null
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+
+      setError(response.error || 'Failed to update request')
+      return null
+    } catch (err: unknown) {
+      setError(errorMessage(err))
       return null
     } finally {
       setLoading(false)
     }
   }, [fetchRequests])
 
-  // Approve request
-  const approveRequest = useCallback(async (id: string, stage: string, data: any): Promise<FuelRequest | null> => {
+  const approveRequest = useCallback(async (
+    id: string,
+    stage: string,
+    data: ApprovalPayload
+  ): Promise<FuelRequest | null> => {
     setLoading(true)
     setError(null)
-    
+
     try {
-      const response = await api.post<{ request: FuelRequest }>(`/approvals/${id}/${stage}`, data)
-      
+      const response = await api.post<{ request: FuelRequest }>(`/approvals/${id}/${stage}`, {
+        ...data,
+        approved: true,
+        auditAction: 'APPROVE',
+      })
+
       if (response.success && response.data) {
         await fetchRequests()
         return response.data.request
-      } else {
-        setError(response.error || 'Failed to approve request')
-        return null
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+
+      setError(response.error || 'Failed to approve request')
+      return null
+    } catch (err: unknown) {
+      setError(errorMessage(err))
       return null
     } finally {
       setLoading(false)
     }
   }, [fetchRequests])
 
-  // Reject request
-  const rejectRequest = useCallback(async (id: string, stage: string, reason: string): Promise<FuelRequest | null> => {
+  const rejectRequest = useCallback(async (
+    id: string,
+    stage: string,
+    reason: string
+  ): Promise<FuelRequest | null> => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const response = await api.post<{ request: FuelRequest }>(`/approvals/${id}/${stage}`, {
         approved: false,
         reason,
-        designation: '',
-        signature: '',
+        designation: 'Confirmed electronically',
+        signature: 'Confirmed electronically',
+        auditAction: 'REJECT',
       })
-      
+
       if (response.success && response.data) {
         await fetchRequests()
         return response.data.request
-      } else {
-        setError(response.error || 'Failed to reject request')
-        return null
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+
+      setError(response.error || 'Failed to reject request')
+      return null
+    } catch (err: unknown) {
+      setError(errorMessage(err))
       return null
     } finally {
       setLoading(false)
     }
   }, [fetchRequests])
 
-  const issueFuel = useCallback(async (id: string, data: any): Promise<FuelRequest | null> => {
+  const issueFuel = useCallback(async (id: string, data: FuelIssuePayload): Promise<FuelRequest | null> => {
     setLoading(true)
     setError(null)
 
@@ -224,32 +248,28 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
 
       setError(response.error || 'Failed to issue fuel')
       return null
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+    } catch (err: unknown) {
+      setError(errorMessage(err))
       return null
     } finally {
       setLoading(false)
     }
   }, [fetchRequests])
 
-  // Set filters with auto-fetch
   const handleSetFilters = useCallback((newFilters: RequestFilter) => {
     setFilters(newFilters)
     setPage(1)
   }, [])
 
-  // Clear filters
   const clearFilters = useCallback(() => {
     setFilters({})
     setPage(1)
   }, [])
 
-  // Refetch
   const refetch = useCallback(async () => {
     await fetchRequests()
   }, [fetchRequests])
 
-  // Auto-fetch on mount and when dependencies change
   useEffect(() => {
     if (autoFetch) {
       fetchRequests()

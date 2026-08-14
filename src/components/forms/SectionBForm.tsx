@@ -2,14 +2,13 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle, XCircle, User, Briefcase, Calendar, Edit3, AlertCircle } from 'lucide-react'
+import { CheckCircle, XCircle, User, Briefcase, Calendar, AlertCircle } from 'lucide-react'
 
-interface SectionBData {
+export interface SectionBData {
   idhini: 'naridhia' | 'siridhii'
   sababu: string
   jina: string
   cheo: string
-  saini: string
   tarehe: string
 }
 
@@ -31,7 +30,6 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
     sababu: initialData?.sababu || '',
     jina: initialData?.jina || '',
     cheo: initialData?.cheo || '',
-    saini: initialData?.saini || 'Confirmed electronically',
     tarehe: initialData?.tarehe || new Date().toISOString().split('T')[0],
   })
 
@@ -167,20 +165,8 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
           </div>
         </div>
 
-        {/* Saini */}
-        <div>
-          <label className="input-label">Saini</label>
-          <div className="relative">
-            <Edit3 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={formData.saini}
-              onChange={(e) => setFormData({ ...formData, saini: e.target.value })}
-              className="input-field pl-10"
-              placeholder="Weka saini yako"
-              required
-            />
-          </div>
+        <div className="rounded-xl border border-primary-100 bg-primary-50/70 p-4 text-sm text-gray-700 dark:border-primary-900/40 dark:bg-primary-900/10 dark:text-gray-200">
+          Uamuzi huu utahifadhiwa kidigitali pamoja na jina, role na tarehe/saa ya mtumiaji aliyeingia.
         </div>
       </div>
 

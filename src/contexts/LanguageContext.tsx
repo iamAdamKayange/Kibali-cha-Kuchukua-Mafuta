@@ -48,6 +48,7 @@ const dictionaries: Record<Language, Dictionary> = {
     lastFuelReceived: 'Mara ya mwisho nilipewa lita',
     applicantSignature: 'Saini ya Mwombaji',
     signaturePlaceholder: 'Weka saini yako',
+    digitalConfirmApplicant: 'Nathibitisha kidigitali kuwa taarifa za ombi hili ni sahihi na zitaenda kwenye hatua ya idhini.',
     submitRequest: 'Peleka Ombi',
   },
   en: {
@@ -91,6 +92,7 @@ const dictionaries: Record<Language, Dictionary> = {
     lastFuelReceived: 'Last fuel received in litres',
     applicantSignature: 'Applicant Signature',
     signaturePlaceholder: 'Enter your signature',
+    digitalConfirmApplicant: 'I digitally confirm that this request information is correct and ready for approval.',
     submitRequest: 'Submit Request',
   },
 }

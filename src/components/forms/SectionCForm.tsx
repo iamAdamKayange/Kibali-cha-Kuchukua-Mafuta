@@ -1,16 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Fuel, Car, BookOpen, Briefcase, Calendar, Edit3, AlertCircle, ArrowRight, XCircle } from 'lucide-react'
+import { Fuel, BookOpen, Briefcase, Calendar, AlertCircle, ArrowRight, XCircle } from 'lucide-react'
 
-interface SectionCData {
+export interface SectionCData {
   apewe: boolean
   lita: number
   sababu: string
   logbookNamba: string
   to: string
   cheo: string
-  saini: string
   tarehe: string
 }
 
@@ -34,7 +33,6 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
     logbookNamba: initialData?.logbookNamba || '',
     to: initialData?.to || '',
     cheo: initialData?.cheo || '',
-    saini: initialData?.saini || 'Confirmed electronically',
     tarehe: initialData?.tarehe || new Date().toISOString().split('T')[0],
   })
 
@@ -205,20 +203,8 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
           </div>
         </div>
 
-        {/* Saini */}
-        <div>
-          <label className="input-label">Saini</label>
-          <div className="relative">
-            <Edit3 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={formData.saini}
-              onChange={(e) => setFormData({ ...formData, saini: e.target.value })}
-              className="input-field pl-10"
-              placeholder="Weka saini yako"
-              required
-            />
-          </div>
+        <div className="rounded-xl border border-primary-100 bg-primary-50/70 p-4 text-sm text-gray-700 dark:border-primary-900/40 dark:bg-primary-900/10 dark:text-gray-200">
+          Uamuzi huu utahifadhiwa kidigitali pamoja na jina, role na tarehe/saa ya mtumiaji aliyeingia.
         </div>
       </div>
 

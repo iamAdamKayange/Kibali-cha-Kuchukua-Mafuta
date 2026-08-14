@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
 import { Fuel, Car, MapPin, User, Building, Hash, Gauge } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -14,7 +13,8 @@ interface SectionAData {
   kmFrom: number
   kmTo: number
   lastFuelReceived: number
-  driverSignature: string
+  applicantConfirmed: boolean
+  driverSignature?: string
 }
 
 interface SectionAFormProps {
@@ -45,7 +45,7 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
     kmFrom: initialData?.kmFrom || 0,
     kmTo: initialData?.kmTo || 0,
     lastFuelReceived: initialData?.lastFuelReceived || 0,
-    driverSignature: initialData?.driverSignature || '',
+    applicantConfirmed: initialData?.applicantConfirmed ?? true,
   })
 
   useEffect(() => {
@@ -59,7 +59,10 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    onSubmit({
+      ...formData,
+      driverSignature: 'Confirmed electronically',
+    })
   }
 
   return (
@@ -248,21 +251,16 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
           </div>
         </div>
 
-        {/* Saini */}
-        <div>
-          <label className="input-label">{t('applicantSignature')}</label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={formData.driverSignature}
-              onChange={(e) => setFormData({ ...formData, driverSignature: e.target.value })}
-              className="input-field pl-10"
-              placeholder={t('signaturePlaceholder')}
-              required
-            />
-          </div>
-        </div>
+        <label className="md:col-span-2 flex items-start gap-3 rounded-xl border border-primary-100 bg-primary-50/70 p-4 text-sm text-gray-700 dark:border-primary-900/40 dark:bg-primary-900/10 dark:text-gray-200">
+          <input
+            type="checkbox"
+            checked={formData.applicantConfirmed}
+            onChange={(e) => setFormData({ ...formData, applicantConfirmed: e.target.checked })}
+            className="mt-1"
+            required
+          />
+          <span>{t('digitalConfirmApplicant')}</span>
+        </label>
       </div>
 
       <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">

@@ -1,4 +1,22 @@
-import { Role, Department } from '@/lib/constants'
+import { Department } from '@/lib/constants'
+
+export type UserRole =
+  | 'ADMIN'
+  | 'DRIVER'
+  | 'HEAD_OF_DEPARTMENT'
+  | 'TRANSPORT_OFFICER'
+  | 'ADA_DAHRM'
+  | 'PROCUREMENT'
+  | 'Mwombaji/Dereva'
+  | 'Mkuu wa Idara/Kitengo'
+  | 'Afisa Usafirishaji'
+  | 'ADA/DAHRM'
+  | 'Ununuzi na Ugavi'
+
+export interface UserDepartment {
+  id: string
+  name: string
+}
 
 export interface User {
   id: string
@@ -6,8 +24,9 @@ export interface User {
   lastName: string
   email: string
   phone: string
-  department: Department
-  role: Role
+  department?: Department | UserDepartment | string | null
+  departmentId?: string | null
+  role: UserRole
   createdAt: Date
   updatedAt: Date
   isActive: boolean
@@ -20,5 +39,5 @@ export interface UserRegistrationData {
   password: string
   phone: string
   department: Department
-  role: Role
+  role: UserRole
 }

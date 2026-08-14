@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle, XCircle, Car, Briefcase, Calendar, Edit3, Fuel } from 'lucide-react'
+import { CheckCircle, XCircle, Car, Briefcase, Calendar, Fuel, AlertCircle } from 'lucide-react'
 
-interface SectionDData {
+export interface SectionDData {
   naridhia: boolean
   lita: number
   gariNumber: string
+  sababu: string
   cheo: string
-  saini: string
   tarehe: string
 }
 
@@ -29,8 +29,8 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
     naridhia: initialData?.naridhia ?? true,
     lita: initialData?.lita || requestData?.litres || 0,
     gariNumber: initialData?.gariNumber || requestData?.vehicleNumber || '',
+    sababu: initialData?.sababu || '',
     cheo: initialData?.cheo || '',
-    saini: initialData?.saini || 'Confirmed electronically',
     tarehe: initialData?.tarehe || new Date().toISOString().split('T')[0],
   })
 
@@ -75,7 +75,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, naridhia: true })}
+              onClick={() => setFormData({ ...formData, naridhia: true, sababu: '' })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
                 formData.naridhia
                   ? 'border-success-500 bg-success-50 dark:bg-success-900/20 text-success-600 dark:text-success-400'
@@ -115,6 +115,22 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
               step="0.1"
               readOnly
               disabled={isRejected}
+            />
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="input-label">
+            Sababu {isRejected && <span className="text-danger-500">*</span>}
+          </label>
+          <div className="relative">
+            <AlertCircle className={`absolute left-3 top-3 w-5 h-5 ${isRejected ? 'text-danger-400' : 'text-gray-400'}`} />
+            <textarea
+              value={formData.sababu}
+              onChange={(e) => setFormData({ ...formData, sababu: e.target.value })}
+              className="input-field pl-10 min-h-[80px]"
+              placeholder={isRejected ? 'Andika sababu ya kukataa...' : 'Andika sababu (hiari)'}
+              required={isRejected}
             />
           </div>
         </div>
@@ -166,20 +182,8 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
           </div>
         </div>
 
-        {/* Saini */}
-        <div>
-          <label className="input-label">Saini</label>
-          <div className="relative">
-            <Edit3 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={formData.saini}
-              onChange={(e) => setFormData({ ...formData, saini: e.target.value })}
-              className="input-field pl-10"
-              placeholder="Weka saini yako"
-              required
-            />
-          </div>
+        <div className="rounded-xl border border-primary-100 bg-primary-50/70 p-4 text-sm text-gray-700 dark:border-primary-900/40 dark:bg-primary-900/10 dark:text-gray-200">
+          Uamuzi huu utahifadhiwa kidigitali pamoja na jina, role na tarehe/saa ya mtumiaji aliyeingia.
         </div>
       </div>
 

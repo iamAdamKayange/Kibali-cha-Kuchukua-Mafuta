@@ -10,7 +10,7 @@ import React, {
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 
-interface User {
+export interface User {
   id: string
   name?: string
   firstName?: string
@@ -48,8 +48,26 @@ export function AuthProvider({
 }) {
   const router = useRouter()
 
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null
+
+    const accessToken = localStorage.getItem('token')
+    const storedUser = localStorage.getItem('user')
+
+    if (!accessToken || !storedUser) return null
+
+    try {
+      const parsedUser = JSON.parse(storedUser) as User
+      return parsedUser?.id ? parsedUser : null
+    } catch {
+      localStorage.removeItem('user')
+      return null
+    }
+  })
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return Boolean(localStorage.getItem('token'))
+  })
 
   /**
    * RESTORE SESSION
@@ -74,6 +92,7 @@ export function AuthProvider({
        */
       if (!accessToken) {
         setUser(null)
+        setLoading(false)
         return
       }
 
@@ -124,12 +143,7 @@ export function AuthProvider({
         /**
          * Token is invalid or expired.
          */
-        localStorage.removeItem('token')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-
-        api.clearToken()
-
+        clearStoredSession()
         setUser(null)
       }
     } catch (error) {
@@ -147,12 +161,7 @@ export function AuthProvider({
       const storedUser = localStorage.getItem('user')
 
       if (!storedUser) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-
-        api.clearToken()
-
+        clearStoredSession()
         setUser(null)
       }
     } finally {
@@ -177,8 +186,6 @@ export function AuthProvider({
     if (typeof window === 'undefined') {
       return
     }
-
-    setLoading(true)
 
     try {
       const response = await api.post<LoginResponse>(
@@ -293,8 +300,6 @@ export function AuthProvider({
       )
 
       throw error
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -334,12 +339,7 @@ export function AuthProvider({
       /**
        * Clear authentication completely.
        */
-      localStorage.removeItem('token')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('user')
-
-      api.clearToken()
-
+      clearStoredSession()
       setUser(null)
 
       /**
@@ -362,6 +362,16 @@ export function AuthProvider({
       {children}
     </AuthContext.Provider>
   )
+}
+
+function clearStoredSession() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('user')
+  }
+
+  api.clearToken()
 }
 
 /**

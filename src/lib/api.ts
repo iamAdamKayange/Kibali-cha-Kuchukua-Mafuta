@@ -2,11 +2,33 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   'https://fuel-request-backend.onrender.com/api'
 
-interface ApiResponse<T = any> {
+interface PaginationMeta {
+  total?: number
+  totalPages?: number
+  page?: number
+  limit?: number
+}
+
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   message?: string
   error?: string
+  pagination?: PaginationMeta
+}
+
+function objectValue(data: unknown, key: string): unknown {
+  if (typeof data !== 'object' || data === null) return undefined
+  return (data as Record<string, unknown>)[key]
+}
+
+function errorFromPayload(data: unknown, fallback: string) {
+  const value =
+    objectValue(data, 'message') ||
+    objectValue(data, 'error') ||
+    objectValue(data, 'detail')
+
+  return typeof value === 'string' && value.trim() ? value : fallback
 }
 
 export class ApiClient {
@@ -115,7 +137,7 @@ export class ApiClient {
       const contentType =
         response.headers.get('content-type') || ''
 
-      let data: any = null
+      let data: unknown = null
 
       if (contentType.includes('application/json')) {
         try {
@@ -141,15 +163,7 @@ export class ApiClient {
       if (response.status === 401) {
         return {
           success: false,
-          error:
-            typeof data === 'object' &&
-            data !== null
-              ? String(
-                  data.message ||
-                    data.error ||
-                    'Session expired'
-                )
-              : 'Session expired',
+          error: errorFromPayload(data, 'Session expired'),
         }
       }
 
@@ -160,17 +174,8 @@ export class ApiClient {
         let errorMessage =
           'Request failed'
 
-        if (
-          typeof data === 'object' &&
-          data !== null
-        ) {
-          errorMessage =
-            String(
-              data.message ||
-                data.error ||
-                data.detail ||
-                errorMessage
-            )
+        if (typeof data === 'object' && data !== null) {
+          errorMessage = errorFromPayload(data, errorMessage)
         } else if (
           typeof data === 'string' &&
           data.trim()
@@ -239,7 +244,7 @@ export class ApiClient {
    */
   async post<T>(
     endpoint: string,
-    body?: any
+    body?: unknown
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'POST',
@@ -255,7 +260,7 @@ export class ApiClient {
    */
   async put<T>(
     endpoint: string,
-    body?: any
+    body?: unknown
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PUT',
@@ -271,7 +276,7 @@ export class ApiClient {
    */
   async patch<T>(
     endpoint: string,
-    body?: any
+    body?: unknown
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PATCH',
