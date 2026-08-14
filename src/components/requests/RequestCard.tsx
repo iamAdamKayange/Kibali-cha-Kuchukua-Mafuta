@@ -1,12 +1,17 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Fuel, User, Car, MapPin, ArrowRight, Building } from 'lucide-react'
+import {
+  Fuel,
+  User,
+  Car,
+  ArrowRight,
+  Building,
+} from 'lucide-react'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import Link from 'next/link'
 import type { FuelRequest } from '@/types'
 
-// Define mock request type
 interface MockRequest {
   id: string
   requestNumber: string
@@ -20,7 +25,6 @@ interface MockRequest {
   currentStage: string
 }
 
-// Union type for request
 type RequestType = FuelRequest | MockRequest
 
 interface RequestCardProps {
@@ -28,71 +32,147 @@ interface RequestCardProps {
   onViewDetails?: (id: string) => void
 }
 
-// Helper to check if request is FuelRequest or MockRequest
 function isFuelRequest(request: RequestType): request is FuelRequest {
   return 'applicantId' in request && 'applicantName' in request
 }
 
-export function RequestCard({ request, onViewDetails }: RequestCardProps) {
-  // Get status with proper type
-  const getStatus = (status: string): 'pending' | 'submitted' | 'approved' | 'rejected' | 'completed' => {
-    const statusMap: Record<string, 'pending' | 'submitted' | 'approved' | 'rejected' | 'completed'> = {
-      'pending': 'pending',
-      'PENDING': 'pending',
-      'submitted': 'submitted',
-      'SUBMITTED': 'submitted',
-      'approved': 'approved',
-      'APPROVED': 'approved',
-      'rejected': 'rejected',
-      'REJECTED': 'rejected',
-      'completed': 'completed',
-      'COMPLETED': 'completed',
-    }
-    return statusMap[status] || 'pending'
+/**
+ * Safely get department name.
+ * Backend may return either:
+ * - "ICT"
+ * - { id: "...", name: "ICT" }
+ * - undefined/null
+ */
+function getDepartmentName(request: RequestType): string {
+  const department = request.department
+
+  if (!department) {
+    return 'N/A'
   }
 
-  // Get applicant name
+  if (typeof department === 'string') {
+    return department
+  }
+
+  if (
+    typeof department === 'object' &&
+    'name' in department &&
+    typeof department.name === 'string'
+  ) {
+    return department.name
+  }
+
+  return 'N/A'
+}
+
+export function RequestCard({
+  request,
+  onViewDetails,
+}: RequestCardProps) {
+
+  const getStatus = (
+    status: string
+  ): 'pending' | 'submitted' | 'approved' | 'rejected' | 'completed' => {
+    const normalized = String(status || '').toLowerCase()
+
+    if (normalized.includes('pending')) {
+      return 'pending'
+    }
+
+    if (
+      normalized === 'submitted' ||
+      normalized === 'pending_approval'
+    ) {
+      return 'submitted'
+    }
+
+    if (
+      normalized === 'approved' ||
+      normalized === 'fuel_issued'
+    ) {
+      return 'approved'
+    }
+
+    if (normalized === 'rejected') {
+      return 'rejected'
+    }
+
+    if (
+      normalized === 'completed' ||
+      normalized === 'complete'
+    ) {
+      return 'completed'
+    }
+
+    return 'pending'
+  }
+
   const getApplicantName = (req: RequestType): string => {
     if (isFuelRequest(req)) {
-      return req.applicantName || req.applicantId || 'N/A'
+      return (
+        req.applicantName ||
+        req.applicantId ||
+        'N/A'
+      )
     }
+
     return req.applicant || 'N/A'
   }
 
-  // Get litres
   const getLitres = (req: RequestType): number => {
     if (isFuelRequest(req)) {
-      return req.litres || req.requestedLitres || 0
+      return (
+        req.litres ??
+        req.requestedLitres ??
+        0
+      )
     }
-    return req.litres || 0
+
+    return req.litres ?? 0
   }
 
-  // Get fuel type
   const getFuelType = (req: RequestType): string => {
     if (isFuelRequest(req)) {
       return req.fuelType || 'N/A'
     }
+
     return req.fuelType || 'N/A'
   }
 
-  // Get date
   const getDate = (req: RequestType): string => {
-    if (isFuelRequest(req)) {
-      return new Date(req.createdAt || req.date).toLocaleDateString('sw-TZ')
+    try {
+      if (isFuelRequest(req)) {
+        const value = req.createdAt || req.date
+
+        if (!value) {
+          return 'N/A'
+        }
+
+        return new Date(value).toLocaleDateString('sw-TZ')
+      }
+
+      return req.date || 'N/A'
+    } catch {
+      return 'N/A'
     }
-    return req.date || new Date().toLocaleDateString('sw-TZ')
   }
 
-  // Get current stage
   const getCurrentStage = (req: RequestType): string => {
     if (isFuelRequest(req)) {
-      return req.currentStage?.replace(/-/g, ' ') || 'N/A'
+      return (
+        req.currentStage
+          ?.replace(/-/g, ' ')
+          .replace(/_/g, ' ') ||
+        'N/A'
+      )
     }
+
     return req.currentStage || 'N/A'
   }
 
   const status = getStatus(request.status)
   const applicantName = getApplicantName(request)
+  const departmentName = getDepartmentName(request)
   const litres = getLitres(request)
   const fuelType = getFuelType(request)
   const date = getDate(request)
@@ -100,67 +180,129 @@ export function RequestCard({ request, onViewDetails }: RequestCardProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
+      initial={{
+        opacity: 0,
+        y: 20,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
+      whileHover={{
+        y: -4,
+      }}
       className="bg-white dark:bg-gray-900 rounded-2xl shadow-card hover:shadow-card-hover dark:shadow-card-dark border border-gray-200 dark:border-gray-800 p-5 transition-all duration-300"
     >
+
+      {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <div>
+
+        <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
               {request.requestNumber}
             </h3>
+
             <StatusBadge status={status} />
+
           </div>
+
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {date}
           </p>
         </div>
-        <div className="flex items-center gap-1 text-sm font-semibold text-primary-600 dark:text-primary-400">
+
+        <div className="flex items-center gap-1 text-sm font-semibold text-primary-600 dark:text-primary-400 shrink-0">
           <Fuel className="w-4 h-4" />
           {litres}L
         </div>
+
       </div>
 
+      {/* Request information */}
       <div className="space-y-2">
+
+        {/* Applicant + Department */}
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <User className="w-4 h-4 text-gray-400" />
-          <span>{applicantName}</span>
-          <span className="text-gray-300 dark:text-gray-600">•</span>
-          <Building className="w-4 h-4 text-gray-400" />
-          <span>{request.department}</span>
+
+          <User className="w-4 h-4 text-gray-400 shrink-0" />
+
+          <span className="truncate">
+            {applicantName}
+          </span>
+
+          <span className="text-gray-300 dark:text-gray-600">
+            •
+          </span>
+
+          <Building className="w-4 h-4 text-gray-400 shrink-0" />
+
+          <span className="truncate">
+            {departmentName}
+          </span>
+
         </div>
+
+        {/* Vehicle + Fuel */}
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <Car className="w-4 h-4 text-gray-400" />
-          <span>{request.vehicleNumber}</span>
-          <span className="text-gray-300 dark:text-gray-600">•</span>
-          <span className="capitalize">{fuelType}</span>
+
+          <Car className="w-4 h-4 text-gray-400 shrink-0" />
+
+          <span className="truncate">
+            {request.vehicleNumber || 'N/A'}
+          </span>
+
+          <span className="text-gray-300 dark:text-gray-600">
+            •
+          </span>
+
+          <span className="capitalize">
+            {fuelType}
+          </span>
+
         </div>
+
       </div>
 
+      {/* Footer */}
       <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          <span className="capitalize">Hatua: {currentStage}</span>
+
+          <span className="capitalize">
+            Hatua: {currentStage}
+          </span>
+
         </div>
+
         {onViewDetails ? (
+
           <button
+            type="button"
             onClick={() => onViewDetails(request.id)}
             className="flex items-center gap-1 text-sm font-medium text-primary-500 hover:text-primary-600 transition-colors duration-200"
           >
             Angalia
+
             <ArrowRight className="w-4 h-4" />
           </button>
+
         ) : (
+
           <Link
             href={`/requests/${request.id}`}
             className="flex items-center gap-1 text-sm font-medium text-primary-500 hover:text-primary-600 transition-colors duration-200"
           >
             Angalia
+
             <ArrowRight className="w-4 h-4" />
           </Link>
+
         )}
+
       </div>
+
     </motion.div>
   )
 }
