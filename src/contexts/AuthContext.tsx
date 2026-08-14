@@ -52,41 +52,68 @@ export function AuthProvider({
   const [loading, setLoading] = useState(true)
 
   /**
-   * Restore authentication session on page load
+   * RESTORE SESSION
+   *
+   * Runs once when the application starts.
+   *
+   * We first load the cached user so the UI can immediately
+   * know who is logged in, then verify the access token
+   * against the backend.
    */
   const restoreSession = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     try {
       const accessToken = localStorage.getItem('token')
       const storedUser = localStorage.getItem('user')
 
-      // No access token means user is not authenticated
+      /**
+       * No token = no authenticated session.
+       */
       if (!accessToken) {
         setUser(null)
         return
       }
 
-      // Set token immediately so API requests can use it
+      /**
+       * Set token immediately.
+       */
       api.setToken(accessToken)
 
       /**
-       * If we already have a cached user, show it immediately.
-       * This prevents the white-screen/loading delay.
+       * Restore cached user immediately.
+       *
+       * This prevents unnecessary blank/loading states
+       * when refreshing the dashboard.
        */
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser) as User
-          setUser(parsedUser)
-        } catch {
+
+          if (parsedUser && parsedUser.id) {
+            setUser(parsedUser)
+          }
+        } catch (error) {
+          console.error(
+            'Failed to parse stored user:',
+            error
+          )
+
           localStorage.removeItem('user')
         }
       }
 
       /**
-       * Verify token with backend
+       * Verify access token with backend.
        */
       const response = await api.get<User>('/auth/me')
 
       if (response.success && response.data) {
+        /**
+         * Backend confirmed the session.
+         */
         setUser(response.data)
 
         localStorage.setItem(
@@ -94,7 +121,9 @@ export function AuthProvider({
           JSON.stringify(response.data)
         )
       } else {
-        // Invalid/expired token
+        /**
+         * Token is invalid or expired.
+         */
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('user')
@@ -104,20 +133,26 @@ export function AuthProvider({
         setUser(null)
       }
     } catch (error) {
-      console.error('Failed to restore authentication session:', error)
+      console.error(
+        'Failed to restore authentication session:',
+        error
+      )
 
       /**
-       * Do not immediately destroy the session if the API
-       * temporarily fails.
+       * IMPORTANT:
        *
-       * If we have cached user data, keep it.
+       * If backend is temporarily unavailable but we have
+       * a cached user, don't immediately log the user out.
        */
       const storedUser = localStorage.getItem('user')
 
       if (!storedUser) {
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
+        localStorage.removeItem('user')
+
         api.clearToken()
+
         setUser(null)
       }
     } finally {
@@ -126,7 +161,7 @@ export function AuthProvider({
   }, [])
 
   /**
-   * Restore session when application starts
+   * INITIAL SESSION RESTORE
    */
   useEffect(() => {
     restoreSession()
@@ -139,17 +174,24 @@ export function AuthProvider({
     email: string,
     password: string
   ): Promise<void> => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     setLoading(true)
 
     try {
       const response = await api.post<LoginResponse>(
         '/auth/login',
         {
-          email,
+          email: email.trim(),
           password,
         }
       )
 
+      /**
+       * Validate backend response.
+       */
       if (!response.success || !response.data) {
         throw new Error(
           response.error || 'Login failed'
@@ -163,16 +205,38 @@ export function AuthProvider({
       } = response.data
 
       /**
-       * IMPORTANT:
-       * Save accessToken as "token" because the rest of
-       * the application expects localStorage.getItem('token')
+       * Validate tokens.
        */
-      localStorage.setItem('token', accessToken)
+      if (!accessToken) {
+        throw new Error(
+          'Login succeeded but access token was not returned.'
+        )
+      }
 
+      if (!loggedInUser) {
+        throw new Error(
+          'Login succeeded but user information was not returned.'
+        )
+      }
+
+      /**
+       * ------------------------------------------------
+       * SAVE AUTHENTICATION DATA
+       * ------------------------------------------------
+       *
+       * Save token BEFORE navigation.
+       */
       localStorage.setItem(
-        'refreshToken',
-        refreshToken
+        'token',
+        accessToken
       )
+
+      if (refreshToken) {
+        localStorage.setItem(
+          'refreshToken',
+          refreshToken
+        )
+      }
 
       localStorage.setItem(
         'user',
@@ -180,37 +244,53 @@ export function AuthProvider({
       )
 
       /**
-       * Set API authorization immediately
+       * Update API client immediately.
        */
       api.setToken(accessToken)
 
       /**
-       * Update React state BEFORE navigation.
-       * This prevents dashboard components from rendering
-       * while user is still null.
+       * Update React authentication state BEFORE
+       * navigating to dashboard.
        */
       setUser(loggedInUser)
 
       /**
-       * Determine dashboard based on role
+       * Determine dashboard according to role.
        */
       const dashboard = roleToDashboard(
         loggedInUser.role
       )
 
-      /**
-       * Use replace instead of push so login page
-       * is not kept in browser history.
-       */
-      router.replace(dashboard)
+      console.log(
+        'Login successful:',
+        loggedInUser.email
+      )
+
+      console.log(
+        'User role:',
+        loggedInUser.role
+      )
+
+      console.log(
+        'Redirecting to:',
+        dashboard
+      )
 
       /**
-       * Refresh router state so Next.js immediately
-       * picks up the authenticated state.
+       * Navigate using replace.
+       *
+       * DO NOT call router.refresh() here.
+       *
+       * The AuthContext state has already been updated,
+       * so refresh is unnecessary and can cause an
+       * unwanted rendering transition.
        */
-      router.refresh()
+      router.replace(dashboard)
     } catch (error) {
-      console.error('Login failed:', error)
+      console.error(
+        'Login failed:',
+        error
+      )
 
       throw error
     } finally {
@@ -222,29 +302,37 @@ export function AuthProvider({
    * LOGOUT
    */
   const logout = async (): Promise<void> => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     try {
       const refreshToken =
         localStorage.getItem('refreshToken')
 
       /**
-       * Call backend logout if available.
-       * We don't let a backend failure prevent local logout.
+       * Tell backend about logout if refresh token exists.
+       *
+       * Backend failure should NOT prevent local logout.
        */
       if (refreshToken) {
         try {
-          await api.post('/auth/logout', {
-            refreshToken,
-          })
+          await api.post(
+            '/auth/logout',
+            {
+              refreshToken,
+            }
+          )
         } catch (error) {
           console.warn(
-            'Backend logout failed, continuing local logout:',
+            'Backend logout failed. Continuing local logout.',
             error
           )
         }
       }
     } finally {
       /**
-       * Always clear local authentication
+       * Clear authentication completely.
        */
       localStorage.removeItem('token')
       localStorage.removeItem('refreshToken')
@@ -254,8 +342,10 @@ export function AuthProvider({
 
       setUser(null)
 
+      /**
+       * Return to login.
+       */
       router.replace('/login')
-      router.refresh()
     }
   }
 
@@ -275,7 +365,9 @@ export function AuthProvider({
 }
 
 /**
- * useAuth hook
+ * ------------------------------------------------
+ * useAuth
+ * ------------------------------------------------
  */
 export const useAuth = () => {
   const context = useContext(AuthContext)
@@ -290,12 +382,16 @@ export const useAuth = () => {
 }
 
 /**
- * Get user's display name
+ * ------------------------------------------------
+ * GET USER DISPLAY NAME
+ * ------------------------------------------------
  */
 export const getUserDisplayName = (
   user: User | null
 ) => {
-  if (!user) return ''
+  if (!user) {
+    return ''
+  }
 
   return (
     user.name ||
@@ -307,25 +403,37 @@ export const getUserDisplayName = (
 }
 
 /**
- * Get department name
+ * ------------------------------------------------
+ * GET USER DEPARTMENT NAME
+ * ------------------------------------------------
  */
 export const getUserDepartmentName = (
   user: User | null
 ) => {
-  if (!user?.department) return ''
+  if (!user?.department) {
+    return ''
+  }
 
-  return typeof user.department === 'string'
-    ? user.department
-    : user.department.name
+  if (typeof user.department === 'string') {
+    return user.department
+  }
+
+  return user.department.name
 }
 
 /**
- * Convert role to dashboard
+ * ------------------------------------------------
+ * ROLE → DASHBOARD
+ * ------------------------------------------------
  */
 export const roleToDashboard = (
   role: string
 ) => {
-  const normalized = String(role || '').toUpperCase()
+  const normalized = String(
+    role || ''
+  )
+    .trim()
+    .toUpperCase()
 
   switch (normalized) {
     case 'ADMIN':
@@ -348,6 +456,10 @@ export const roleToDashboard = (
       return '/dashboard/ununuzi-ugavi'
 
     default:
+      console.warn(
+        `Unknown user role "${role}". Redirecting to mwombaji dashboard.`
+      )
+
       return '/dashboard/mwombaji'
   }
 }
