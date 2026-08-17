@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext'
 interface SectionAData {
   vehicleId?: string
   vehicleNumber: string
+  departmentId: string
   fuelType: 'DIESEL' | 'PETROL'
   requestedLitres: number
   purpose: string
@@ -35,9 +36,16 @@ interface VehicleOption {
   fuelType: 'DIESEL' | 'PETROL'
 }
 
+interface DepartmentOption {
+  id: string
+  name: string
+  description?: string
+}
+
 interface SectionAFormData {
   vehicleId: string
   vehicleNumber: string
+  departmentId: string
   fuelType: 'DIESEL' | 'PETROL'
   requestedLitres: string
   purpose: string
@@ -58,9 +66,11 @@ function inputValue(value?: number) {
 export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps) {
   const { t } = useLanguage()
   const [vehicles, setVehicles] = useState<VehicleOption[]>([])
+  const [departments, setDepartments] = useState<DepartmentOption[]>([])
   const [formData, setFormData] = useState<SectionAFormData>({
     vehicleId: initialData?.vehicleId || '',
     vehicleNumber: initialData?.vehicleNumber || '',
+    departmentId: initialData?.departmentId || '',
     fuelType: initialData?.fuelType || 'DIESEL',
     requestedLitres: inputValue(initialData?.requestedLitres),
     purpose: initialData?.purpose || '',
@@ -73,6 +83,9 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
   useEffect(() => {
     api.get<VehicleOption[]>('/vehicles?limit=100&isActive=true').then((response) => {
       if (response.success && response.data) setVehicles(response.data)
+    })
+    api.get<DepartmentOption[]>('/departments').then((response) => {
+      if (response.success && response.data) setDepartments(response.data)
     })
   }, [])
 
@@ -101,6 +114,7 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
     onSubmit({
       vehicleId,
       vehicleNumber,
+      departmentId: formData.departmentId,
       fuelType: formData.fuelType,
       requestedLitres: numberFromInput(formData.requestedLitres),
       purpose: formData.purpose,
@@ -179,6 +193,26 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
               step="0.1"
               required
             />
+          </div>
+        </div>
+
+        <div>
+          <label className="input-label">Idara / Kitengo Kinachohusika</label>
+          <div className="relative">
+            <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <select
+              value={formData.departmentId}
+              onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+              className="input-field pl-10 appearance-none"
+              required
+            >
+              <option value="">Chagua idara au kitengo</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -237,7 +237,7 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
         </div>
 
         <div>
-          <label className="input-label">Idara</label>
+          <label className="input-label">Idara / Kitengo</label>
           <div className="relative">
             <Building className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <select
@@ -246,7 +246,7 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
               className="input-field appearance-none pl-10"
               required
             >
-              <option value="">Chagua Idara</option>
+              <option value="">Chagua Idara au Kitengo</option>
               {departments.map((department) => (
                 <option key={department.id} value={department.id}>{department.name}</option>
               ))}

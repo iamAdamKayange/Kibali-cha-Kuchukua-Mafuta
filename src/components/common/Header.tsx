@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Bell, User, ChevronDown, Search, X, Settings, LogOut, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from '@/components/i18n/LanguageToggle'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { api } from '@/lib/api'
 
 interface HeaderProps {
   toggleSidebar: () => void
@@ -18,22 +20,103 @@ interface HeaderProps {
   }
 }
 
+interface HeaderNotification {
+  id: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
+  requestId?: string
+}
+
 export function Header({ toggleSidebar, user }: HeaderProps) {
+  const router = useRouter()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const { language, t } = useLanguage()
-  const { logout } = useAuth()
+  const { logout, user: authUser } = useAuth()
+  const knownNotificationIds = useRef<Set<string>>(new Set())
+  const initializedNotifications = useRef(false)
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Ombi #FR-00241 limewasilishwa', time: 'Dakika 5 zilizopita', read: false },
-    { id: 2, title: 'Idhini ya Mkuu wa Idara imekamilika', time: 'Saa 2 zilizopita', read: false },
-    { id: 3, title: 'Ombi #FR-00239 limekataliwa', time: 'Saa 5 zilizopita', read: true },
-    { id: 4, title: 'Mafuta yametolewa kwa ombi #FR-00238', time: 'Saa 8 zilizopita', read: true },
-  ])
+  const [notifications, setNotifications] = useState<HeaderNotification[]>([])
 
-  const unreadCount = notifications.filter(n => !n.read).length
-  const deleteLocalNotification = (id: number) => {
-    setNotifications((items) => items.filter((item) => item.id !== id))
+  const unreadCount = notifications.filter((n) => !n.isRead).length
+
+  const showDeviceNotification = (notification: HeaderNotification) => {
+    if (typeof window === 'undefined') return
+    if (localStorage.getItem('notifications-enabled') === 'false') return
+    if (!('Notification' in window)) return
+    if (Notification.permission !== 'granted') return
+
+    const browserNotification = new Notification(notification.title, {
+      body: notification.message,
+      tag: notification.id,
+    })
+
+    browserNotification.onclick = () => {
+      window.focus()
+      if (notification.requestId) {
+        router.push(`/requests/${notification.requestId}`)
+      } else {
+        router.push('/notifications')
+      }
+      browserNotification.close()
+    }
+  }
+
+  const fetchNotifications = async () => {
+    if (!authUser) return
+
+    const response = await api.get<HeaderNotification[]>('/notifications?limit=8')
+
+    if (!response.success || !response.data) return
+
+    const incoming = response.data
+    const nextIds = new Set(incoming.map((item) => item.id))
+
+    if (initializedNotifications.current) {
+      incoming
+        .filter((item) => !item.isRead && !knownNotificationIds.current.has(item.id))
+        .forEach(showDeviceNotification)
+    }
+
+    knownNotificationIds.current = nextIds
+    initializedNotifications.current = true
+    setNotifications(incoming)
+  }
+
+  useEffect(() => {
+    if (!authUser) return
+
+    fetchNotifications()
+    const intervalId = window.setInterval(fetchNotifications, 30000)
+
+    return () => window.clearInterval(intervalId)
+  }, [authUser?.id])
+
+  const deleteNotification = async (id: string) => {
+    const response = await api.delete(`/notifications/${id}`)
+    if (response.success) {
+      setNotifications((items) => items.filter((item) => item.id !== id))
+      knownNotificationIds.current.delete(id)
+    }
+  }
+
+  const openNotification = async (notification: HeaderNotification) => {
+    if (!notification.isRead) {
+      await api.patch(`/notifications/${notification.id}/read`, {})
+      setNotifications((items) =>
+        items.map((item) =>
+          item.id === notification.id ? { ...item, isRead: true } : item
+        )
+      )
+    }
+
+    setShowNotifications(false)
+
+    if (notification.requestId) {
+      router.push(`/requests/${notification.requestId}`)
+    }
   }
 
   return (
@@ -79,7 +162,19 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
           {/* Notifications */}
           <div className="relative">
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={async () => {
+                if (
+                  typeof window !== 'undefined' &&
+                  'Notification' in window &&
+                  Notification.permission === 'default' &&
+                  localStorage.getItem('notifications-enabled') !== 'false'
+                ) {
+                  await Notification.requestPermission()
+                }
+
+                setShowNotifications(!showNotifications)
+                fetchNotifications()
+              }}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 relative"
               aria-label="Notifications"
             >
@@ -107,32 +202,36 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                     </button>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
-                    {notifications.map((notif) => (
+                    {notifications.length > 0 ? notifications.map((notif) => (
                       <motion.div
                         key={notif.id}
                         drag="x"
                         dragConstraints={{ left: -96, right: 0 }}
                         dragElastic={0.08}
                         onDragEnd={(_, info) => {
-                          if (info.offset.x < -72) deleteLocalNotification(notif.id)
+                          if (info.offset.x < -72) deleteNotification(notif.id)
                         }}
+                        onClick={() => openNotification(notif)}
                         className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 ${
-                          !notif.read ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''
+                          !notif.isRead ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''
                         }`}
                       >
                         <div className="flex items-start gap-3">
                           <div className={`w-2 h-2 rounded-full mt-1.5 ${
-                            !notif.read ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+                            !notif.isRead ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
                           }`} />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm text-gray-900 dark:text-white">{notif.title}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{notif.time}</p>
+                            <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{notif.message}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              {new Date(notif.createdAt).toLocaleString(language === 'sw' ? 'sw-TZ' : 'en-US')}
+                            </p>
                           </div>
                           <button
                             type="button"
                             onClick={(event) => {
                               event.stopPropagation()
-                              deleteLocalNotification(notif.id)
+                              deleteNotification(notif.id)
                             }}
                             className="rounded-lg p-1.5 text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20"
                             aria-label="Delete notification"
@@ -141,7 +240,11 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                           </button>
                         </div>
                       </motion.div>
-                    ))}
+                    )) : (
+                      <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                        Hakuna arifa mpya.
+                      </div>
+                    )}
                   </div>
                   <div className="p-3 border-t border-gray-200 dark:border-gray-800 text-center">
                     <Link href="/notifications" className="text-sm text-primary-500 hover:text-primary-600 font-medium">

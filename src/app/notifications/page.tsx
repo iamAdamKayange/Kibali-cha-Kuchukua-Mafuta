@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Bell, CheckCheck, Trash2 } from 'lucide-react'
 import { Header } from '@/components/common/Header'
 import { Sidebar } from '@/components/common/Sidebar'
@@ -34,9 +35,11 @@ function roleToSidebarRole(role?: string) {
 function SwipeNotification({
   notification,
   onDelete,
+  onOpen,
 }: {
   notification: AppNotification
   onDelete: (id: string) => void
+  onOpen: (notification: AppNotification) => void
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl">
@@ -50,6 +53,7 @@ function SwipeNotification({
         onDragEnd={(_, info) => {
           if (info.offset.x < -86) onDelete(notification.id)
         }}
+        onClick={() => onOpen(notification)}
         className={`relative rounded-2xl border p-4 shadow-sm ${
           notification.isRead
             ? 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900'
@@ -66,7 +70,10 @@ function SwipeNotification({
             </div>
           </div>
           <button
-            onClick={() => onDelete(notification.id)}
+            onClick={(event) => {
+              event.stopPropagation()
+              onDelete(notification.id)
+            }}
             className="rounded-lg p-2 text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20"
             aria-label="Delete notification"
           >
@@ -79,6 +86,7 @@ function SwipeNotification({
 }
 
 export default function NotificationsPage() {
+  const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [notifications, setNotifications] = useState<AppNotification[]>([])
@@ -109,6 +117,23 @@ export default function NotificationsPage() {
     const response = await api.delete(`/notifications/${id}`)
     if (response.success) setNotifications((items) => items.filter((item) => item.id !== id))
     else setToast({ type: 'error', message: response.error || 'Failed to delete notification' })
+  }
+
+  const openNotification = async (notification: AppNotification) => {
+    if (!notification.isRead) {
+      const response = await api.patch(`/notifications/${notification.id}/read`, {})
+      if (response.success) {
+        setNotifications((items) =>
+          items.map((item) =>
+            item.id === notification.id ? { ...item, isRead: true } : item
+          )
+        )
+      }
+    }
+
+    if (notification.requestId) {
+      router.push(`/requests/${notification.requestId}`)
+    }
   }
 
   const clearAll = async () => {
@@ -154,6 +179,7 @@ export default function NotificationsPage() {
                   key={notification.id}
                   notification={notification}
                   onDelete={deleteNotification}
+                  onOpen={openNotification}
                 />
               )) : (
                 <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center dark:border-gray-800 dark:bg-gray-900">
