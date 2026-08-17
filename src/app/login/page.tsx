@@ -61,18 +61,19 @@ export default function LoginPage() {
   const isLoading = loading
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 p-4 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-gray-50 p-4 text-gray-900 transition-colors duration-300 dark:bg-gray-950 dark:text-white">
       <Image
         src="/assets/tanzania-emblem.png"
         alt="Alama ya Taifa la Tanzania"
         fill
         priority
-        className="object-cover object-center opacity-20 mix-blend-screen"
+        className="object-contain object-center p-10 opacity-[0.12] mix-blend-screen dark:opacity-[0.16]"
         sizes="100vw"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(2,6,23,0.95),rgba(8,47,73,0.76),rgba(2,6,23,0.95))]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(20,184,166,0.12),transparent_30%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(240,249,255,0.82),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(135deg,rgba(2,6,23,0.95),rgba(8,47,73,0.76),rgba(2,6,23,0.95))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(20,184,166,0.08),transparent_30%)] dark:bg-[radial-gradient(circle_at_75%_20%,rgba(20,184,166,0.12),transparent_30%)]" />
 
+      <div className="relative z-10 flex min-h-[calc(100vh-2rem)] items-center justify-center">
       <motion.div
         initial={{
           opacity: 0,
@@ -85,27 +86,27 @@ export default function LoginPage() {
         transition={{
           duration: 0.5,
         }}
-        className="relative z-10 w-full max-w-md"
+        className="w-full max-w-md"
       >
 
         {/* Logo */}
         <div className="text-center mb-8">
 
-          <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-2xl shadow-black/30 backdrop-blur">
+          <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-white/60 p-1 shadow-2xl shadow-black/10 backdrop-blur dark:bg-white/5 dark:shadow-black/30">
             <Image
               src="/assets/tanzania-emblem.png"
               alt="Alama ya Taifa la Tanzania"
               fill
-              className="object-cover object-center mix-blend-screen"
+              className="object-contain object-center p-1 mix-blend-screen"
               sizes="96px"
             />
           </div>
 
-          <h1 className="text-2xl font-bold text-white mt-4">
+          <h1 className="mt-4 text-2xl font-bold text-gray-900 dark:text-white">
             Kibali cha Kuchukua Mafuta
           </h1>
 
-          <p className="text-sm text-slate-200 mt-1">
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
             Wizara ya Habari, Utamaduni,
             Sanaa na Michezo
           </p>
@@ -113,9 +114,9 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="glass-card rounded-2xl p-8 border border-white/10 bg-white/85 dark:bg-gray-950/70 backdrop-blur-xl">
+        <div className="glass-card rounded-2xl border border-white/50 bg-white/90 p-8 shadow-2xl shadow-gray-900/10 backdrop-blur-xl dark:border-gray-800/70 dark:bg-gray-950/70 dark:shadow-black/30">
 
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+          <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
             Ingia kwenye Mfumo
           </h2>
 
@@ -257,7 +258,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6">
+        <div className="mt-6 text-center">
 
           <p className="text-xs text-slate-300">
             © 2026 Wizara ya Habari,
@@ -267,6 +268,7 @@ export default function LoginPage() {
         </div>
 
       </motion.div>
+      </div>
 
     </div>
   )

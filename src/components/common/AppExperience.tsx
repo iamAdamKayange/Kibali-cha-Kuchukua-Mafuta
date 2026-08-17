@@ -75,7 +75,7 @@ export function AppExperience({ children }: { children: React.ReactNode }) {
           width={1200}
           height={1200}
           priority
-          className="absolute left-1/2 top-1/2 w-[min(72vw,880px)] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.08] mix-blend-screen"
+          className="absolute left-1/2 top-1/2 h-[min(68vw,760px)] w-[min(68vw,760px)] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.08] mix-blend-screen"
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(20,184,166,0.09),transparent_28%)]" />
       </div>
