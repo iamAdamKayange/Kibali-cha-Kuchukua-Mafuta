@@ -1,6 +1,9 @@
-const API_URL =
+const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
   'https://fuel-request-backend.onrender.com/api'
+).replace(/\/+$/, '')
+
+const REQUEST_TIMEOUT_MS = 20000
 
 interface PaginationMeta {
   total?: number
@@ -125,10 +128,21 @@ export class ApiClient {
       )
     }
 
+    const controller =
+      options.signal ? null : new AbortController()
+
+    const timeoutId: ReturnType<typeof setTimeout> | null = controller
+      ? setTimeout(
+          () => controller.abort(),
+          REQUEST_TIMEOUT_MS
+        )
+      : null
+
     try {
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: options.signal || controller?.signal,
       })
 
       /*
@@ -218,12 +232,23 @@ export class ApiClient {
         error
       )
 
+      const message =
+        error instanceof Error &&
+        error.name === 'AbortError'
+          ? 'Server imechelewa kujibu. Tafadhali jaribu tena baada ya muda mfupi.'
+          : error instanceof TypeError
+            ? 'Imeshindikana kuunganisha na server. Hakikisha backend ya Render ipo online na CORS/URL zimewekwa sahihi.'
+            : error instanceof Error
+              ? error.message
+              : 'Network error'
+
       return {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Network error',
+        error: message,
+      }
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
       }
     }
   }
