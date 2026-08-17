@@ -8,11 +8,19 @@ import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Toast } from '@/components/common/Toast'
 import { api } from '@/lib/api'
+import {
+  ORGANIZATION_CATEGORIES,
+  ORGANIZATION_UNITS,
+  getCategoryLabel,
+  inferCategoryFromDepartmentName,
+  type OrganizationCategory,
+} from '@/lib/organization'
 import type { User } from '@/types'
 
 interface DepartmentOption {
   id: string
   name: string
+  description?: string | null
 }
 
 const roles = ['ADMIN', 'DRIVER', 'HEAD_OF_DEPARTMENT', 'TRANSPORT_OFFICER', 'ADA_DAHRM', 'PROCUREMENT']
@@ -21,6 +29,15 @@ function departmentName(user: User) {
   const department = user.department
   if (!department) return 'N/A'
   return typeof department === 'string' ? department : department.name
+}
+
+function departmentCategory(user: User) {
+  const department = user.department
+  if (!department || typeof department === 'string') {
+    return 'N/A'
+  }
+
+  return getCategoryLabel(department.description || inferCategoryFromDepartmentName(department.name))
 }
 
 export default function AdminUsersPage() {
@@ -39,6 +56,7 @@ export default function AdminUsersPage() {
     email: '',
     phone: '',
     role: 'DRIVER',
+    category: '' as OrganizationCategory | '',
     departmentId: '',
     isActive: true,
     password: '',
@@ -73,6 +91,11 @@ export default function AdminUsersPage() {
   }, [search, users])
 
   const openEdit = (user: User) => {
+    const department = user.department && typeof user.department === 'object' ? user.department : null
+    const category = department
+      ? inferCategoryFromDepartmentName(department.description || department.name)
+      : ''
+
     setEditingUser(user)
     setForm({
       firstName: user.firstName || '',
@@ -80,11 +103,27 @@ export default function AdminUsersPage() {
       email: user.email || '',
       phone: user.phone || '',
       role: user.role as string,
+      category,
       departmentId: user.departmentId || (typeof user.department === 'object' && user.department ? user.department.id : ''),
       isActive: user.isActive,
       password: '',
     })
   }
+
+  const availableDepartments = useMemo(() => {
+    if (!form.category) return departments
+
+    const category = form.category as OrganizationCategory
+
+    return departments.filter((department) => {
+      const description = String(department.description || '').trim().toUpperCase()
+      if (description) {
+        return description === category
+      }
+
+      return ORGANIZATION_UNITS[category].includes(department.name.trim().toUpperCase())
+    })
+  }, [departments, form.category])
 
   const saveUser = async () => {
     if (!editingUser) return
@@ -172,6 +211,7 @@ export default function AdminUsersPage() {
                       <th className="px-4 py-3 font-medium">Jina</th>
                       <th className="px-4 py-3 font-medium">Email</th>
                       <th className="px-4 py-3 font-medium">Role</th>
+                      <th className="px-4 py-3 font-medium">Aina</th>
                       <th className="px-4 py-3 font-medium">Idara</th>
                       <th className="px-4 py-3 font-medium">Hali</th>
                       <th className="px-4 py-3 font-medium">Actions</th>
@@ -183,6 +223,7 @@ export default function AdminUsersPage() {
                         <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'N/A'}</td>
                         <td className="px-4 py-3">{user.email}</td>
                         <td className="px-4 py-3">{user.role}</td>
+                        <td className="px-4 py-3">{departmentCategory(user)}</td>
                         <td className="px-4 py-3">{departmentName(user)}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${user.isActive ? 'bg-success-50 text-success-700 dark:bg-success-900/20 dark:text-success-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}>
@@ -223,9 +264,15 @@ export default function AdminUsersPage() {
               <select className="input-field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                 {roles.map((role) => <option key={role} value={role}>{role}</option>)}
               </select>
-              <select className="input-field" value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })}>
-                <option value="">No department</option>
-                {departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+              <select className="input-field" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as OrganizationCategory | '', departmentId: '' })}>
+                <option value="">Chagua Idara au Kitengo</option>
+                {ORGANIZATION_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>{category.label}</option>
+                ))}
+              </select>
+              <select className="input-field" value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })} disabled={!form.category}>
+                <option value="">{form.category ? `Chagua ${form.category === 'KITENGO' ? 'Kitengo' : 'Idara'}` : 'Chagua kwanza aina ya muundo'}</option>
+                {availableDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
               </select>
               <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                 <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />

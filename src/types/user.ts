@@ -16,6 +16,7 @@ export type UserRole =
 export interface UserDepartment {
   id: string
   name: string
+  description?: string | null
 }
 
 export interface User {

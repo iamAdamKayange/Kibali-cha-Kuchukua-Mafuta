@@ -16,6 +16,11 @@ import {
   User,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import {
+  ORGANIZATION_CATEGORIES,
+  ORGANIZATION_UNITS,
+  type OrganizationCategory,
+} from '@/lib/organization'
 
 const roles = [
   { value: 'DRIVER', label: 'Mwombaji/Dereva' },
@@ -32,6 +37,7 @@ interface UserRegistrationFormProps {
 interface Department {
   id: string
   name: string
+  description?: string | null
 }
 
 interface RegisterResult {
@@ -58,6 +64,7 @@ const emptyForm = {
   email: '',
   password: '',
   phone: '',
+  category: '' as OrganizationCategory | '',
   departmentId: '',
   role: '',
 }
@@ -74,6 +81,21 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
     const code = Math.random().toString(36).slice(2, 6).toUpperCase()
     return `Kibali@${new Date().getFullYear()}${code}`
   }, [])
+
+  const selectedCategory = formData.category
+
+  const availableDepartments = useMemo(() => {
+    if (!selectedCategory) return departments
+
+    return departments.filter((department) => {
+      const description = String(department.description || '').trim().toUpperCase()
+      if (description) {
+        return description === selectedCategory
+      }
+
+      return ORGANIZATION_UNITS[selectedCategory].includes(department.name.trim().toUpperCase())
+    })
+  }, [departments, selectedCategory])
 
   useEffect(() => {
     api.get<Department[]>('/departments').then((response) => {
@@ -237,7 +259,35 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
         </div>
 
         <div>
-          <label className="input-label">Idara / Kitengo</label>
+          <label className="input-label">Aina ya Muundo</label>
+          <div className="relative">
+            <Briefcase className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  category: e.target.value as OrganizationCategory | '',
+                  departmentId: '',
+                })
+              }
+              className="input-field appearance-none pl-10"
+              required
+            >
+              <option value="">Chagua Idara au Kitengo</option>
+              {ORGANIZATION_CATEGORIES.map((category) => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="input-label">
+            {selectedCategory === 'KITENGO' ? 'Kitengo' : selectedCategory === 'IDARA' ? 'Idara' : 'Idara / Kitengo'}
+          </label>
           <div className="relative">
             <Building className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <select
@@ -245,13 +295,23 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
               onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
               className="input-field appearance-none pl-10"
               required
+              disabled={!selectedCategory}
             >
-              <option value="">Chagua Idara au Kitengo</option>
-              {departments.map((department) => (
+              <option value="">
+                {selectedCategory
+                  ? `Chagua ${selectedCategory === 'KITENGO' ? 'Kitengo' : 'Idara'}`
+                  : 'Chagua kwanza aina ya muundo'}
+              </option>
+              {availableDepartments.map((department) => (
                 <option key={department.id} value={department.id}>{department.name}</option>
               ))}
             </select>
           </div>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            {selectedCategory
+              ? `Chaguo za ${selectedCategory === 'KITENGO' ? 'vitengo' : 'idara'} pekee ndizo zinaonyeshwa hapa.`
+              : 'Chagua kwanza kama mtumiaji yuko Idara au Kitengo.'}
+          </p>
         </div>
 
         <div className="md:col-span-2">
