@@ -6,7 +6,8 @@ import { api } from '@/lib/api'
 import { useLanguage } from '@/contexts/LanguageContext'
 
 interface SectionAData {
-  vehicleId: string
+  vehicleId?: string
+  vehicleNumber: string
   fuelType: 'DIESEL' | 'PETROL'
   requestedLitres: number
   purpose: string
@@ -34,17 +35,38 @@ interface VehicleOption {
   fuelType: 'DIESEL' | 'PETROL'
 }
 
+interface SectionAFormData {
+  vehicleId: string
+  vehicleNumber: string
+  fuelType: 'DIESEL' | 'PETROL'
+  requestedLitres: string
+  purpose: string
+  kmFrom: string
+  kmTo: string
+  lastFuelReceived: string
+  applicantConfirmed: boolean
+}
+
+function numberFromInput(value: string) {
+  return value.trim() === '' ? 0 : Number(value)
+}
+
+function inputValue(value?: number) {
+  return value === undefined ? '' : String(value)
+}
+
 export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps) {
   const { t } = useLanguage()
   const [vehicles, setVehicles] = useState<VehicleOption[]>([])
-  const [formData, setFormData] = useState<SectionAData>({
+  const [formData, setFormData] = useState<SectionAFormData>({
     vehicleId: initialData?.vehicleId || '',
+    vehicleNumber: initialData?.vehicleNumber || '',
     fuelType: initialData?.fuelType || 'DIESEL',
-    requestedLitres: initialData?.requestedLitres || 0,
+    requestedLitres: inputValue(initialData?.requestedLitres),
     purpose: initialData?.purpose || '',
-    kmFrom: initialData?.kmFrom || 0,
-    kmTo: initialData?.kmTo || 0,
-    lastFuelReceived: initialData?.lastFuelReceived || 0,
+    kmFrom: inputValue(initialData?.kmFrom),
+    kmTo: inputValue(initialData?.kmTo),
+    lastFuelReceived: inputValue(initialData?.lastFuelReceived),
     applicantConfirmed: initialData?.applicantConfirmed ?? true,
   })
 
@@ -54,13 +76,38 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
     })
   }, [])
 
-  const selectedVehicle = vehicles.find((vehicle) => vehicle.id === formData.vehicleId)
-  const kmUsed = useMemo(() => Math.max(formData.kmTo - formData.kmFrom, 0), [formData.kmFrom, formData.kmTo])
+  const selectedVehicle = vehicles.find((vehicle) => {
+    const typedNumber = formData.vehicleNumber.trim().toUpperCase()
+
+    return (
+      vehicle.id === formData.vehicleId ||
+      vehicle.vehicleNumber.trim().toUpperCase() === typedNumber
+    )
+  })
+
+  const kmUsed = useMemo(() => {
+    const kmFrom = numberFromInput(formData.kmFrom)
+    const kmTo = numberFromInput(formData.kmTo)
+
+    return Math.max(kmTo - kmFrom, 0)
+  }, [formData.kmFrom, formData.kmTo])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    const vehicleNumber = formData.vehicleNumber.trim()
+    const vehicleId = selectedVehicle?.id || formData.vehicleId || undefined
+
     onSubmit({
-      ...formData,
+      vehicleId,
+      vehicleNumber,
+      fuelType: formData.fuelType,
+      requestedLitres: numberFromInput(formData.requestedLitres),
+      purpose: formData.purpose,
+      kmFrom: numberFromInput(formData.kmFrom),
+      kmTo: numberFromInput(formData.kmTo),
+      lastFuelReceived: numberFromInput(formData.lastFuelReceived),
+      applicantConfirmed: formData.applicantConfirmed,
       driverSignature: 'Confirmed electronically',
     })
   }
@@ -125,7 +172,7 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
             <input
               type="number"
               value={formData.requestedLitres}
-              onChange={(e) => setFormData({ ...formData, requestedLitres: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, requestedLitres: e.target.value })}
               className="input-field pl-10"
               placeholder="0.0"
               min="0"
@@ -139,19 +186,34 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
           <label className="input-label">{t('vehicleNumber')}</label>
           <div className="relative">
             <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <select
-              value={formData.vehicleId}
-              onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
-              className="input-field pl-10 appearance-none"
+            <input
+              type="text"
+              value={formData.vehicleNumber}
+              onChange={(e) => {
+                const vehicleNumber = e.target.value
+                const matchedVehicle = vehicles.find(
+                  (vehicle) =>
+                    vehicle.vehicleNumber.trim().toUpperCase() ===
+                    vehicleNumber.trim().toUpperCase()
+                )
+
+                setFormData({
+                  ...formData,
+                  vehicleNumber,
+                  vehicleId: matchedVehicle?.id || '',
+                  fuelType: matchedVehicle?.fuelType || formData.fuelType,
+                })
+              }}
+              className="input-field pl-10"
+              placeholder="Mf. T 123 ABC"
+              list="vehicle-number-options"
               required
-            >
-              <option value="">{t('chooseVehicle')}</option>
+            />
+            <datalist id="vehicle-number-options">
               {vehicles.map((vehicle) => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.vehicleNumber}
-                </option>
+                <option key={vehicle.id} value={vehicle.vehicleNumber} />
               ))}
-            </select>
+            </datalist>
           </div>
         </div>
 
@@ -193,7 +255,7 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
             <input
               type="number"
               value={formData.kmFrom}
-              onChange={(e) => setFormData({ ...formData, kmFrom: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, kmFrom: e.target.value })}
               className="input-field pl-10"
               placeholder="0"
               min="0"
@@ -209,7 +271,7 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
             <input
               type="number"
               value={formData.kmTo}
-              onChange={(e) => setFormData({ ...formData, kmTo: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, kmTo: e.target.value })}
               className="input-field pl-10"
               placeholder="0"
               min="0"
@@ -241,7 +303,7 @@ export function SectionAForm({ onSubmit, initialData, user }: SectionAFormProps)
             <input
               type="number"
               value={formData.lastFuelReceived}
-              onChange={(e) => setFormData({ ...formData, lastFuelReceived: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, lastFuelReceived: e.target.value })}
               className="input-field pl-10"
               placeholder="0"
               min="0"
