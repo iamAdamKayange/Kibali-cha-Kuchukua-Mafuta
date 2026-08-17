@@ -316,10 +316,15 @@ export class ApiClient {
    * DELETE
    */
   async delete<T>(
-    endpoint: string
+    endpoint: string,
+    body?: unknown
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'DELETE',
+      body:
+        body !== undefined
+          ? JSON.stringify(body)
+          : undefined,
     })
   }
 }

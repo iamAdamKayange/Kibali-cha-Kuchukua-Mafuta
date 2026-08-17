@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -7,8 +6,6 @@ import { LanguageProvider } from '@/contexts/LanguageContext'
 import { OfflineNotice } from '@/components/common/OfflineNotice'
 import { PWAInstallPrompt } from '@/components/common/PWAInstallPrompt'
 import { AppExperience } from '@/components/common/AppExperience'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Kibali cha Kuchukua Mafuta',
@@ -43,7 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sw" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
+      <body className="antialiased">
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>

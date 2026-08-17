@@ -9,6 +9,10 @@ import React, {
 } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import {
+  registerDevicePushToken,
+  unregisterDevicePushToken,
+} from '@/lib/pushNotifications'
 
 export interface User {
   id: string
@@ -177,6 +181,29 @@ export function AuthProvider({
   }, [restoreSession])
 
   /**
+   * PUSH TOKEN SYNC
+   *
+   * Keep the current device registered with FCM whenever
+   * the authenticated user changes.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    if (loading) {
+      return
+    }
+
+    if (!user?.id) {
+      void unregisterDevicePushToken()
+      return
+    }
+
+    void registerDevicePushToken()
+  }, [loading, user?.id])
+
+  /**
    * LOGIN
    */
   const login = async (
@@ -312,6 +339,8 @@ export function AuthProvider({
     }
 
     try {
+      await unregisterDevicePushToken()
+
       const refreshToken =
         localStorage.getItem('refreshToken')
 
