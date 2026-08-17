@@ -12,7 +12,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function LoginPage() {
-  const { login, loading: authLoading } = useAuth()
+  const { login, loading: sessionLoading } = useAuth()
 
   const [showPassword, setShowPassword] =
     useState(false)
@@ -57,8 +57,7 @@ export default function LoginPage() {
     }
   }
 
-  const isLoading =
-    loading || authLoading
+  const isLoading = loading
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4">
@@ -112,6 +111,12 @@ export default function LoginPage() {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
             Ingia kwenye Mfumo
           </h2>
+
+          {sessionLoading && (
+            <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-300">
+              Tunaangalia kikao kilichohifadhiwa...
+            </div>
+          )}
 
           {/* Error */}
           {error && (
