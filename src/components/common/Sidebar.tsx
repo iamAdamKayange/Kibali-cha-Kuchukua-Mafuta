@@ -46,6 +46,25 @@ const navItems: Record<string, Array<{ icon: LucideIcon; labelKey: string; href:
   ],
 }
 
+function roleLabel(role: string) {
+  switch (role) {
+    case 'admin':
+      return 'Msimamizi'
+    case 'mwombaji':
+      return 'Mwombaji/Dereva'
+    case 'mkuu-idara':
+      return 'Mkuu wa Idara'
+    case 'afisa-usafirishaji':
+      return 'Afisa Usafirishaji'
+    case 'ada-dahrm':
+      return 'ADA'
+    case 'ununuzi-ugavi':
+      return 'Ununuzi na Ugavi'
+    default:
+      return role.replace('-', ' ').toUpperCase()
+  }
+}
+
 interface SidebarProps {
   role: keyof typeof navItems
   isOpen: boolean
@@ -85,7 +104,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                 Kibali Mafuta
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {role.replace('-', ' ').toUpperCase()}
+                {roleLabel(role)}
               </p>
             </div>
           </div>

@@ -26,7 +26,7 @@ const roles = [
   { value: 'DRIVER', label: 'Mwombaji/Dereva' },
   { value: 'HEAD_OF_DEPARTMENT', label: 'Mkuu wa Idara/Kitengo' },
   { value: 'TRANSPORT_OFFICER', label: 'Afisa Usafirishaji' },
-  { value: 'ADA_DAHRM', label: 'ADA/DAHRM' },
+  { value: 'ADA_DAHRM', label: 'ADA' },
   { value: 'PROCUREMENT', label: 'Ununuzi na Ugavi' },
 ]
 
@@ -61,6 +61,7 @@ interface RegisterResult {
 const emptyForm = {
   firstName: '',
   lastName: '',
+  title: '',
   email: '',
   password: '',
   phone: '',
@@ -74,6 +75,7 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [titleTouched, setTitleTouched] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<RegisterResult | null>(null)
 
@@ -83,6 +85,27 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
   }, [])
 
   const selectedCategory = formData.category
+  const suggestedTitle = useMemo(() => {
+    if (formData.role === 'HEAD_OF_DEPARTMENT') {
+      return selectedCategory === 'KITENGO' ? 'Mkurugenzi wa Kitengo' : 'Mkuu wa Idara'
+    }
+
+    if (formData.role === 'TRANSPORT_OFFICER') return 'Afisa Usafirishaji'
+    if (formData.role === 'ADA_DAHRM') return 'ADA'
+    if (formData.role === 'PROCUREMENT') return 'Ununuzi na Ugavi'
+    if (formData.role === 'DRIVER') return 'Dereva'
+
+    return ''
+  }, [formData.role, selectedCategory])
+
+  useEffect(() => {
+    if (!titleTouched && suggestedTitle) {
+      setFormData((current) => ({
+        ...current,
+        title: suggestedTitle,
+      }))
+    }
+  }, [suggestedTitle, titleTouched])
 
   const availableDepartments = useMemo(() => {
     if (!selectedCategory) return departments
@@ -121,6 +144,7 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
 
     setResult(response.data)
     setFormData(emptyForm)
+    setTitleTouched(false)
     onSubmit?.(response.data)
     setLoading(false)
   }
@@ -211,6 +235,27 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
               required
             />
           </div>
+        </div>
+
+        <div>
+          <label className="input-label">Cheo</label>
+          <div className="relative">
+            <Briefcase className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => {
+                setTitleTouched(true)
+                setFormData({ ...formData, title: e.target.value })
+              }}
+              className="input-field pl-10"
+              placeholder="Mkuu wa Idara"
+              required
+            />
+          </div>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            {suggestedTitle ? `Chaguo la haraka: ${suggestedTitle}` : 'Andika cheo kinachoendana na jukumu la mtumiaji.'}
+          </p>
         </div>
 
         <div>
@@ -320,7 +365,9 @@ export function UserRegistrationForm({ onSubmit }: UserRegistrationFormProps) {
             <Briefcase className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <select
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, role: e.target.value })
+              }}
               className="input-field appearance-none pl-10"
               required
             >

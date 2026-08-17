@@ -8,7 +8,7 @@ export const DEPARTMENTS = [
   'Michezo',
   'Usafirishaji',
   'ADA',
-  'DAHRM',
+  'Utawala na Rasilimali Watu',
 ] as const
 export type Department = typeof DEPARTMENTS[number]
 
@@ -16,7 +16,7 @@ export const ROLES = [
   'Mwombaji/Dereva',
   'Mkuu wa Idara/Kitengo',
   'Afisa Usafirishaji',
-  'ADA/DAHRM',
+  'ADA',
   'Ununuzi na Ugavi',
 ] as const
 export type Role = typeof ROLES[number]
@@ -37,7 +37,7 @@ export type RequestStatus = typeof REQUEST_STATUS[keyof typeof REQUEST_STATUS]
 export const STATUS_LABELS: Record<string, string> = {
   PENDING_HEAD_APPROVAL: 'Inasubiri Mkuu wa Idara',
   PENDING_TRANSPORT_APPROVAL: 'Inasubiri Afisa Usafirishaji',
-  PENDING_DA_APPROVAL: 'Inasubiri ADA/DAHRM',
+  PENDING_DA_APPROVAL: 'Inasubiri ADA',
   PENDING_FUEL_ISSUANCE: 'Inasubiri Ununuzi na Ugavi',
   COMPLETED: 'Imekamilika',
   CANCELLED: 'Imefutwa',

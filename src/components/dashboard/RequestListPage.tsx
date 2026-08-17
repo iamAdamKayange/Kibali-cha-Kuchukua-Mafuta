@@ -18,16 +18,15 @@ const roleLabels: Record<DashboardRole, string> = {
   mwombaji: 'Mwombaji/Dereva',
   'mkuu-idara': 'Mkuu wa Idara',
   'afisa-usafirishaji': 'Afisa Usafirishaji',
-  'ada-dahrm': 'ADA/DAHRM',
+  'ada-dahrm': 'ADA',
   'ununuzi-ugavi': 'Ununuzi na Ugavi',
 }
 
-const stageLabels: Record<DashboardRole, string> = {
-  mwombaji: 'mwombaji',
-  'mkuu-idara': 'mkuu-idara',
-  'afisa-usafirishaji': 'afisa-usafirishaji',
-  'ada-dahrm': 'ada-dahrm',
-  'ununuzi-ugavi': 'ununuzi-ugavi',
+const pendingStatusByRole: Record<Exclude<DashboardRole, 'mwombaji'>, string[]> = {
+  'mkuu-idara': ['PENDING_HEAD_APPROVAL'],
+  'afisa-usafirishaji': ['PENDING_TRANSPORT_APPROVAL'],
+  'ada-dahrm': ['PENDING_DA_APPROVAL'],
+  'ununuzi-ugavi': ['PENDING_FUEL_ISSUANCE'],
 }
 
 const pageCopy: Record<PageMode, { title: string; description: string; empty: string }> = {
@@ -98,8 +97,11 @@ function requestLitres(request: FuelRequest) {
 }
 
 function isPendingForRole(request: FuelRequest, role: DashboardRole) {
-  const stage = String(request.currentStage || '').toLowerCase()
-  return pendingStatuses.includes(request.status) && (role === 'mwombaji' || stage.includes(stageLabels[role]))
+  if (role === 'mwombaji') {
+    return pendingStatuses.includes(request.status)
+  }
+
+  return pendingStatusByRole[role].includes(String(request.status || '').toUpperCase())
 }
 
 function isHistory(request: FuelRequest) {

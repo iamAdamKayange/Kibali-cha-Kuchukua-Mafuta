@@ -52,7 +52,7 @@ const departmentOptions = [
   { value: 'Michezo', label: 'Michezo' },
   { value: 'Usafirishaji', label: 'Usafirishaji' },
   { value: 'ADA', label: 'ADA' },
-  { value: 'DAHRM', label: 'DAHRM' },
+  { value: 'ADA', label: 'ADA' },
 ]
 
 export function RequestFilters({ onFilter, onClear, initialFilters }: RequestFiltersProps) {

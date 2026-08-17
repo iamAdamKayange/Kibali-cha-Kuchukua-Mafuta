@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -67,6 +68,18 @@ export function AppExperience({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <Image
+          src="/assets/tanzania-emblem.png"
+          alt="Alama ya Taifa la Tanzania"
+          width={1200}
+          height={1200}
+          priority
+          className="absolute left-1/2 top-1/2 w-[min(72vw,880px)] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.08] mix-blend-screen"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(20,184,166,0.09),transparent_28%)]" />
+      </div>
+
       {/*
         IMPORTANT: this used to be an AnimatePresence + motion.div keyed by
         pathname. That pattern can leave a client-side navigation's new page
@@ -76,7 +89,7 @@ export function AppExperience({ children }: { children: React.ReactNode }) {
         cannot get "stuck" like that: it always runs to completion and ends
         at opacity 1, and content is never hidden behind animation state.
       */}
-      <div key={pathname} className={`app-page-fade ${showBottomNav ? 'pb-24 lg:pb-0' : ''}`}>
+      <div key={pathname} className={`relative z-10 app-page-fade ${showBottomNav ? 'pb-24 lg:pb-0' : ''}`}>
         {showSkeleton ? <AppRouteSkeleton /> : children}
       </div>
 

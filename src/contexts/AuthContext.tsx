@@ -19,6 +19,7 @@ export interface User {
   name?: string
   firstName?: string
   lastName?: string
+  title?: string | null
   employeeNumber?: string
   email: string
   role: string

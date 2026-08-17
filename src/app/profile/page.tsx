@@ -24,6 +24,26 @@ function roleToSidebarRole(role?: string): SidebarRole {
   return 'mwombaji'
 }
 
+function roleLabel(role?: string) {
+  switch (String(role || '').toUpperCase()) {
+    case 'ADMIN':
+      return 'Msimamizi'
+    case 'DRIVER':
+    case 'MWOMBAJI':
+      return 'Mwombaji/Dereva'
+    case 'HEAD_OF_DEPARTMENT':
+      return 'Mkuu wa Idara'
+    case 'TRANSPORT_OFFICER':
+      return 'Afisa Usafirishaji'
+    case 'ADA_DAHRM':
+      return 'ADA'
+    case 'PROCUREMENT':
+      return 'Ununuzi na Ugavi'
+    default:
+      return role || 'Mwombaji'
+  }
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -155,12 +175,15 @@ export default function ProfilePage() {
                 <h2 className="text-center text-lg font-semibold text-gray-900 dark:text-white">
                   {getUserDisplayName(user)}
                 </h2>
+                {user.title && (
+                  <p className="text-center text-sm text-gray-500 dark:text-gray-400">{user.title}</p>
+                )}
                 <p className="text-center text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
 
                 <div className="mt-6 space-y-3 rounded-xl bg-gray-50 p-4 text-sm dark:bg-gray-900/60">
                   <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                     <Shield className="h-4 w-4 text-primary-500" />
-                    <span>{user.role}</span>
+                    <span>{roleLabel(user.role)}</span>
                   </div>
                   <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                     <Building className="h-4 w-4 text-primary-500" />

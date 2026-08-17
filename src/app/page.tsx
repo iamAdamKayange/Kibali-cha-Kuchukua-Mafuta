@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowRight, CheckCircle2, Fuel, Gauge, ShieldCheck, Workflow } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -9,7 +10,7 @@ const workflow = [
   'Mwombaji/Dereva',
   'Mkuu wa Idara',
   'Afisa Usafirishaji',
-  'ADA/DAHRM',
+  'ADA',
   'Ununuzi na Ugavi',
 ]
 
@@ -20,7 +21,16 @@ export default function HomePage() {
   return (
     <main className="min-h-screen overflow-hidden bg-slate-950 text-white">
       <section className="relative flex min-h-screen items-center">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(20,184,166,0.28),transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.98),rgba(12,74,110,0.86),rgba(17,24,39,0.98))]" />
+        <Image
+          src="/assets/tanzania-emblem.png"
+          alt="Alama ya Taifa la Tanzania"
+          fill
+          priority
+          className="object-cover object-center opacity-25 mix-blend-screen"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(2,6,23,0.92),rgba(8,47,73,0.72),rgba(2,6,23,0.94))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(20,184,166,0.18),transparent_30%)]" />
         <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-slate-950 to-transparent" />
 
         <div className="relative mx-auto grid w-full max-w-7xl gap-10 px-4 py-8 md:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
@@ -40,8 +50,8 @@ export default function HomePage() {
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 md:text-lg">
               {isSw
-                ? 'Dhibiti maombi, idhini, ukaguzi wa usafirishaji, idhini ya ADA/DAHRM na utoaji wa mafuta kwa njia ya haraka, salama na yenye kumbukumbu.'
-                : 'Manage requests, approvals, transport verification, ADA/DAHRM review and fuel issuance through a fast, secure and auditable workflow.'}
+                ? 'Dhibiti maombi, idhini, ukaguzi wa usafirishaji, idhini ya ADA na utoaji wa mafuta kwa njia ya haraka, salama na yenye kumbukumbu.'
+                : 'Manage requests, approvals, transport verification, ADA review and fuel issuance through a fast, secure and auditable workflow.'}
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -81,7 +91,7 @@ export default function HomePage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.12, duration: 0.55 }}
             id="workflow"
-            className="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-2xl backdrop-blur-xl md:p-6"
+            className="rounded-2xl border border-white/10 bg-slate-950/55 p-4 shadow-2xl backdrop-blur-xl md:p-6"
           >
             <div className="mb-5 flex items-center justify-between">
               <div>

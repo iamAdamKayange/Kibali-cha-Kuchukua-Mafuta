@@ -23,7 +23,16 @@ interface DepartmentOption {
   description?: string | null
 }
 
-const roles = ['ADMIN', 'DRIVER', 'HEAD_OF_DEPARTMENT', 'TRANSPORT_OFFICER', 'ADA_DAHRM', 'PROCUREMENT']
+const roleLabels: Record<string, string> = {
+  ADMIN: 'Msimamizi',
+  DRIVER: 'Mwombaji/Dereva',
+  HEAD_OF_DEPARTMENT: 'Mkuu wa Idara/Kitengo',
+  TRANSPORT_OFFICER: 'Afisa Usafirishaji',
+  ADA_DAHRM: 'ADA',
+  PROCUREMENT: 'Ununuzi na Ugavi',
+}
+
+const roles = Object.keys(roleLabels)
 
 function departmentName(user: User) {
   const department = user.department
@@ -53,6 +62,7 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
+    title: '',
     email: '',
     phone: '',
     role: 'DRIVER',
@@ -82,7 +92,7 @@ export default function AdminUsersPage() {
     if (!term) return users
 
     return users.filter((user) =>
-      [user.firstName, user.lastName, user.email, user.phone, user.role, departmentName(user)]
+        [user.firstName, user.lastName, user.title, user.email, user.phone, user.role, departmentName(user)]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -100,6 +110,7 @@ export default function AdminUsersPage() {
     setForm({
       firstName: user.firstName || '',
       lastName: user.lastName || '',
+      title: user.title || '',
       email: user.email || '',
       phone: user.phone || '',
       role: user.role as string,
@@ -131,6 +142,7 @@ export default function AdminUsersPage() {
     const response = await api.patch<User>(`/admin/users/${editingUser.id}`, {
       firstName: form.firstName,
       lastName: form.lastName,
+      title: form.title,
       email: form.email,
       phone: form.phone || null,
       role: form.role,
@@ -211,6 +223,7 @@ export default function AdminUsersPage() {
                       <th className="px-4 py-3 font-medium">Jina</th>
                       <th className="px-4 py-3 font-medium">Email</th>
                       <th className="px-4 py-3 font-medium">Role</th>
+                      <th className="px-4 py-3 font-medium">Cheo</th>
                       <th className="px-4 py-3 font-medium">Aina</th>
                       <th className="px-4 py-3 font-medium">Idara</th>
                       <th className="px-4 py-3 font-medium">Hali</th>
@@ -222,7 +235,8 @@ export default function AdminUsersPage() {
                       <tr key={user.id} className="text-gray-700 dark:text-gray-300">
                         <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'N/A'}</td>
                         <td className="px-4 py-3">{user.email}</td>
-                        <td className="px-4 py-3">{user.role}</td>
+                        <td className="px-4 py-3">{roleLabels[user.role] || user.role}</td>
+                        <td className="px-4 py-3">{user.title || 'N/A'}</td>
                         <td className="px-4 py-3">{departmentCategory(user)}</td>
                         <td className="px-4 py-3">{departmentName(user)}</td>
                         <td className="px-4 py-3">
@@ -258,11 +272,12 @@ export default function AdminUsersPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <input className="input-field" placeholder="First name" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
               <input className="input-field" placeholder="Last name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+              <input className="input-field" placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
               <input className="input-field" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               <input className="input-field" placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               <input className="input-field" placeholder="New password (optional)" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
               <select className="input-field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                {roles.map((role) => <option key={role} value={role}>{role}</option>)}
+                {roles.map((role) => <option key={role} value={role}>{roleLabels[role] || role}</option>)}
               </select>
               <select className="input-field" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as OrganizationCategory | '', departmentId: '' })}>
                 <option value="">Chagua Idara au Kitengo</option>

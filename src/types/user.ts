@@ -10,7 +10,7 @@ export type UserRole =
   | 'Mwombaji/Dereva'
   | 'Mkuu wa Idara/Kitengo'
   | 'Afisa Usafirishaji'
-  | 'ADA/DAHRM'
+  | 'ADA'
   | 'Ununuzi na Ugavi'
 
 export interface UserDepartment {
@@ -23,6 +23,7 @@ export interface User {
   id: string
   firstName: string
   lastName: string
+  title?: string | null
   email: string
   phone: string
   department?: Department | UserDepartment | string | null

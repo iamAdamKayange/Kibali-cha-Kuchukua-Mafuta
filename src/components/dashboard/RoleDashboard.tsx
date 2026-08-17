@@ -52,9 +52,9 @@ const copy: Record<RoleDashboardKey, {
     icon: ListChecks,
   },
   'ada-dahrm': {
-    title: 'Dashibodi ya ADA/DAHRM',
+    title: 'Dashibodi ya ADA',
     subtitle: 'Toa idhini ya mwisho au kataa ombi lenye sababu.',
-    pendingTitle: 'Maombi Yanayosubiri Idhini ya ADA/DAHRM',
+    pendingTitle: 'Maombi Yanayosubiri Idhini ya ADA',
     actionLabel: 'Kagua Maombi',
     pendingHref: '/dashboard/ada-dahrm/pending',
     sidebarRole: 'ada-dahrm',

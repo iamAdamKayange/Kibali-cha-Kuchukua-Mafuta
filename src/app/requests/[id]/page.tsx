@@ -98,7 +98,7 @@ function timeline(request: DetailRequest) {
     { key: 'submitted', label: 'Ombi Limewasilishwa' },
     { key: 'head', label: 'Idhini ya Mkuu wa Idara' },
     { key: 'transport', label: 'Idhini ya Afisa Usafirishaji' },
-    { key: 'ada', label: 'Idhini ya ADA/DAHRM' },
+    { key: 'ada', label: 'Idhini ya ADA' },
     { key: 'issue', label: 'Utoaji wa Mafuta' },
   ]
 

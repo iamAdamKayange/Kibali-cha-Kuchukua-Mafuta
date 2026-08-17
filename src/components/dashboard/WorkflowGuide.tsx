@@ -15,7 +15,7 @@ const steps = [
   { role: 'mwombaji', title: 'Mwombaji/Dereva', action: 'Submit fuel request' },
   { role: 'mkuu-idara', title: 'Mkuu wa Idara', action: 'Approve / Reject' },
   { role: 'afisa-usafirishaji', title: 'Afisa Usafirishaji', action: 'Verify vehicle, logbook and litres' },
-  { role: 'ada-dahrm', title: 'ADA/DAHRM', action: 'Final approval / rejection' },
+  { role: 'ada-dahrm', title: 'ADA', action: 'Final approval / rejection' },
   { role: 'ununuzi-ugavi', title: 'Ununuzi na Ugavi', action: 'Issue fuel and token number' },
 ] as const
 

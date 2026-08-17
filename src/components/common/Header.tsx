@@ -33,14 +33,85 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
   const router = useRouter()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [inlineNotifications, setInlineNotifications] = useState<HeaderNotification[]>([])
   const { language, t } = useLanguage()
   const { logout, user: authUser } = useAuth()
   const knownNotificationIds = useRef<Set<string>>(new Set())
   const initializedNotifications = useRef(false)
+  const dismissTimers = useRef<Record<string, number>>({})
 
   const [notifications, setNotifications] = useState<HeaderNotification[]>([])
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
+
+  const dismissInlineNotification = (id: string) => {
+    setInlineNotifications((items) => items.filter((item) => item.id !== id))
+
+    const timer = dismissTimers.current[id]
+    if (timer) {
+      window.clearTimeout(timer)
+      delete dismissTimers.current[id]
+    }
+  }
+
+  const playNotificationSound = () => {
+    if (typeof window === 'undefined') return
+    if (localStorage.getItem('notifications-enabled') === 'false') return
+
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+
+    if (!AudioContextClass) return
+
+    try {
+      const context = new AudioContextClass()
+      void context.resume?.()
+
+      const oscillator = context.createOscillator()
+      const gain = context.createGain()
+      oscillator.type = 'sine'
+      oscillator.frequency.value = 880
+      gain.gain.value = 0.0001
+
+      oscillator.connect(gain)
+      gain.connect(context.destination)
+
+      const now = context.currentTime
+      gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35)
+
+      oscillator.start(now)
+      oscillator.stop(now + 0.38)
+      oscillator.onended = () => {
+        void context.close()
+      }
+    } catch {
+      // Ignore browsers that block autoplay or audio creation.
+    }
+  }
+
+  const showInlineNotification = (notification: HeaderNotification) => {
+    if (localStorage.getItem('notifications-enabled') === 'false') return
+
+    setInlineNotifications((current) => {
+      if (current.some((item) => item.id === notification.id)) {
+        return current
+      }
+
+      return [notification, ...current].slice(0, 3)
+    })
+
+    playNotificationSound()
+
+    if (dismissTimers.current[notification.id]) {
+      window.clearTimeout(dismissTimers.current[notification.id])
+    }
+
+    dismissTimers.current[notification.id] = window.setTimeout(() => {
+      dismissInlineNotification(notification.id)
+    }, 6500)
+  }
 
   const showDeviceNotification = (notification: HeaderNotification) => {
     if (typeof window === 'undefined') return
@@ -77,7 +148,10 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
     if (initializedNotifications.current) {
       incoming
         .filter((item) => !item.isRead && !knownNotificationIds.current.has(item.id))
-        .forEach(showDeviceNotification)
+        .forEach((item) => {
+          showDeviceNotification(item)
+          showInlineNotification(item)
+        })
     }
 
     knownNotificationIds.current = nextIds
@@ -93,6 +167,12 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
 
     return () => window.clearInterval(intervalId)
   }, [authUser?.id])
+
+  useEffect(() => {
+    return () => {
+      Object.values(dismissTimers.current).forEach((timer) => window.clearTimeout(timer))
+    }
+  }, [])
 
   const deleteNotification = async (id: string) => {
     const response = await api.delete(`/notifications/${id}`)
@@ -279,7 +359,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                 >
                   <div className="p-4 border-b border-gray-200 dark:border-gray-800">
                     <p className="font-medium text-gray-900 dark:text-white">{user?.name || 'Adam'}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{user?.role || 'Mwombaji'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{formatRoleLabel(user?.role)}</p>
                   </div>
                   <div className="p-2">
                     <Link
@@ -310,6 +390,62 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
           </div>
         </div>
       </div>
+
+      <div className="pointer-events-none fixed right-4 top-4 z-[60] flex w-[min(100vw-2rem,24rem)] flex-col gap-3" aria-live="polite">
+        <AnimatePresence initial={false}>
+          {inlineNotifications.map((notification) => (
+            <motion.button
+              key={notification.id}
+              initial={{ opacity: 0, x: 24, y: -8 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              exit={{ opacity: 0, x: 24, y: -8 }}
+              onClick={() => openNotification(notification)}
+              className="pointer-events-auto rounded-2xl border border-primary-200 bg-white p-4 text-left shadow-2xl shadow-gray-900/20 dark:border-primary-900/40 dark:bg-gray-950"
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary-500" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{notification.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">{notification.message}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    dismissInlineNotification(notification.id)
+                  }}
+                  className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                  aria-label="Close notification"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.button>
+          ))}
+        </AnimatePresence>
+      </div>
     </header>
   )
+}
+
+function formatRoleLabel(role?: string) {
+  const normalized = String(role || '').trim().toUpperCase()
+
+  switch (normalized) {
+    case 'ADMIN':
+      return 'Msimamizi'
+    case 'DRIVER':
+    case 'MWOMBAJI':
+      return 'Mwombaji/Dereva'
+    case 'HEAD_OF_DEPARTMENT':
+      return 'Mkuu wa Idara'
+    case 'TRANSPORT_OFFICER':
+      return 'Afisa Usafirishaji'
+    case 'ADA_DAHRM':
+      return 'ADA'
+    case 'PROCUREMENT':
+      return 'Ununuzi na Ugavi'
+    default:
+      return role || 'Mwombaji'
+  }
 }

@@ -44,7 +44,7 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
-              <main className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+              <main className="relative isolate min-h-screen bg-gray-50/90 dark:bg-gray-950/88 transition-colors duration-300">
                 <OfflineNotice />
                 <PWAInstallPrompt />
                 <AppExperience>{children}</AppExperience>

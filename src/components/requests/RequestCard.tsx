@@ -65,6 +65,35 @@ function getDepartmentName(request: RequestType): string {
   return 'N/A'
 }
 
+function getWorkflowStageLabel(request: RequestType): string {
+  const stageFromSource = isFuelRequest(request)
+    ? String(request.currentStage || '').trim()
+    : String(request.currentStage || '').trim()
+
+  if (stageFromSource) {
+    return stageFromSource.replace(/-/g, ' ').replace(/_/g, ' ')
+  }
+
+  const normalizedStatus = String(request.status || '').toUpperCase()
+
+  const statusToStage: Record<string, string> = {
+    PENDING_HEAD_APPROVAL: 'mkuu wa idara',
+    HEAD_APPROVED: 'mkuu wa idara',
+    HEAD_REJECTED: 'mkuu wa idara',
+    PENDING_TRANSPORT_APPROVAL: 'afisa usafirishaji',
+    TRANSPORT_APPROVED: 'afisa usafirishaji',
+    TRANSPORT_REJECTED: 'afisa usafirishaji',
+    PENDING_DA_APPROVAL: 'ada/dahrm',
+    ADA_APPROVED: 'ada/dahrm',
+    ADA_REJECTED: 'ada/dahrm',
+    PENDING_FUEL_ISSUANCE: 'ununuzi na ugavi',
+    COMPLETED: 'imekamilika',
+    CANCELLED: 'imefutwa',
+  }
+
+  return statusToStage[normalizedStatus] || 'N/A'
+}
+
 export function RequestCard({
   request,
   onViewDetails,
@@ -157,26 +186,13 @@ export function RequestCard({
     }
   }
 
-  const getCurrentStage = (req: RequestType): string => {
-    if (isFuelRequest(req)) {
-      return (
-        req.currentStage
-          ?.replace(/-/g, ' ')
-          .replace(/_/g, ' ') ||
-        'N/A'
-      )
-    }
-
-    return req.currentStage || 'N/A'
-  }
-
   const status = getStatus(request.status)
   const applicantName = getApplicantName(request)
   const departmentName = getDepartmentName(request)
   const litres = getLitres(request)
   const fuelType = getFuelType(request)
   const date = getDate(request)
-  const currentStage = getCurrentStage(request)
+  const currentStage = getWorkflowStageLabel(request)
 
   return (
     <motion.div

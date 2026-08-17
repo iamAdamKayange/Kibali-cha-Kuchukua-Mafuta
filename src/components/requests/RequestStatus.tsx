@@ -84,7 +84,7 @@ export function RequestStatus({
     { name: 'Mwombaji', key: 'mwombaji' },
     { name: 'Mkuu wa Idara', key: 'mkuu-idara' },
     { name: 'Afisa Usafirishaji', key: 'afisa-usafirishaji' },
-    { name: 'ADA/DAHRM', key: 'ada-dahrm' },
+    { name: 'ADA', key: 'ada-dahrm' },
     { name: 'Ununuzi na Ugavi', key: 'ununuzi-ugavi' },
     { name: 'Imekamilika', key: 'completed' },
   ]

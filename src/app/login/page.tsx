@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import {
   Mail,
@@ -60,7 +61,17 @@ export default function LoginPage() {
   const isLoading = loading
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4">
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 p-4 text-white">
+      <Image
+        src="/assets/tanzania-emblem.png"
+        alt="Alama ya Taifa la Tanzania"
+        fill
+        priority
+        className="object-cover object-center opacity-20 mix-blend-screen"
+        sizes="100vw"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(2,6,23,0.95),rgba(8,47,73,0.76),rgba(2,6,23,0.95))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(20,184,166,0.12),transparent_30%)]" />
 
       <motion.div
         initial={{
@@ -74,31 +85,27 @@ export default function LoginPage() {
         transition={{
           duration: 0.5,
         }}
-        className="w-full max-w-md"
+        className="relative z-10 w-full max-w-md"
       >
 
         {/* Logo */}
         <div className="text-center mb-8">
 
-          <div className="w-20 h-20 mx-auto bg-primary-500 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-
-            <svg
-              className="w-12 h-12 text-white"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-
+          <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-2xl shadow-black/30 backdrop-blur">
+            <Image
+              src="/assets/tanzania-emblem.png"
+              alt="Alama ya Taifa la Tanzania"
+              fill
+              className="object-cover object-center mix-blend-screen"
+              sizes="96px"
+            />
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-4">
+          <h1 className="text-2xl font-bold text-white mt-4">
             Kibali cha Kuchukua Mafuta
           </h1>
 
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm text-slate-200 mt-1">
             Wizara ya Habari, Utamaduni,
             Sanaa na Michezo
           </p>
@@ -106,7 +113,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="glass-card rounded-2xl p-8">
+        <div className="glass-card rounded-2xl p-8 border border-white/10 bg-white/85 dark:bg-gray-950/70 backdrop-blur-xl">
 
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
             Ingia kwenye Mfumo
@@ -252,7 +259,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center mt-6">
 
-          <p className="text-xs text-gray-400 dark:text-gray-600">
+          <p className="text-xs text-slate-300">
             © 2026 Wizara ya Habari,
             Utamaduni, Sanaa na Michezo
           </p>
