@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -16,6 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { roleToDashboard, useAuth } from '@/contexts/AuthContext'
+import { BrandWatermark } from './BrandWatermark'
 
 const rolePrimaryAction: Record<string, { href: string; label: string; icon: LucideIcon }> = {
   ADMIN: { href: '/dashboard/admin/register', label: 'Sajili', icon: UserPlus },
@@ -68,17 +68,7 @@ export function AppExperience({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <Image
-          src="/assets/tanzania-emblem.png"
-          alt="Alama ya Taifa la Tanzania"
-          width={1200}
-          height={1200}
-          priority
-          className="absolute left-1/2 top-1/2 h-[min(68vw,760px)] w-[min(68vw,760px)] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.14] dark:opacity-[0.18] dark:mix-blend-screen"
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(20,184,166,0.09),transparent_28%)]" />
-      </div>
+      <BrandWatermark />
 
       {/*
         IMPORTANT: this used to be an AnimatePresence + motion.div keyed by

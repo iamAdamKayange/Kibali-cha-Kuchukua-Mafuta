@@ -184,7 +184,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-transparent">
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
       <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

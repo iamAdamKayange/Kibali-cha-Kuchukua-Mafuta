@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Activity, BarChart3, Clock, FileText, Fuel, UserPlus, Users } from 'lucide-react'
+import { Footer } from '@/components/common/Footer'
 import { Header } from '@/components/common/Header'
 import { Sidebar } from '@/components/common/Sidebar'
 import { WorkflowGuide } from '@/components/dashboard/WorkflowGuide'
@@ -96,7 +97,7 @@ export default function AdminDashboard() {
   ]
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-transparent">
       <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -135,7 +136,7 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.04 }}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+                className="app-panel p-4"
               >
                 <stat.icon className={`mb-3 h-5 w-5 ${stat.color}`} />
                 <p className="text-2xl font-black text-gray-900 dark:text-white">{loading ? '...' : stat.value}</p>
@@ -145,7 +146,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-span-2">
+            <section className="app-panel p-5 lg:col-span-2">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Activity ya Hivi Karibuni</h2>
                 <Link href="/dashboard/admin/users" className="text-sm font-medium text-primary-600 dark:text-primary-400">Watumiaji wote</Link>
@@ -165,7 +166,7 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+            <section className="app-panel p-5">
               <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Mgawanyo wa Roles</h2>
               <div className="space-y-3">
                 {roleDistribution.length > 0 ? roleDistribution.map((item) => (
@@ -196,6 +197,8 @@ export default function AdminDashboard() {
               </div>
             </section>
           </div>
+
+          <Footer />
         </main>
       </div>
     </div>

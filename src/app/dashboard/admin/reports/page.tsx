@@ -149,7 +149,7 @@ export default function AdminReportsPage() {
   ]
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-transparent">
       <Sidebar
         role="admin"
         isOpen={sidebarOpen}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Bell, User, ChevronDown, Search, X, Settings, LogOut, Trash2 } from 'lucide-react'
@@ -210,6 +211,21 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
             aria-label="Toggle sidebar"
           >
           </button>
+
+          {/* Brand mark - always visible; picks up the slack on mobile where the sidebar is hidden */}
+          <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-xl border border-white/70 bg-white p-1 shadow-[0_6px_14px_-6px_rgba(15,23,42,0.4)] dark:border-white/10 dark:bg-white/5">
+              <Image
+                src="/assets/tanzania-emblem.png"
+                alt="Alama ya Taifa la Tanzania"
+                fill
+                sizes="32px"
+                className="object-contain object-center dark:mix-blend-screen"
+              />
+            </div>
+            <span className="text-sm font-bold text-gray-900 dark:text-white">Kibali Mafuta</span>
+          </Link>
+
           <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
               {new Date().toLocaleDateString(language === 'sw' ? 'sw-TZ' : 'en-US', { 

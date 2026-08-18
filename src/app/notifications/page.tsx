@@ -148,7 +148,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-transparent">
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
       <Sidebar role={roleToSidebarRole(user.role) as any} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">

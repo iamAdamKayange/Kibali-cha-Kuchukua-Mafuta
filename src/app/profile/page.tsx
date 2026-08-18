@@ -136,7 +136,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-transparent">
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
       <Sidebar role={sidebarRole} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
