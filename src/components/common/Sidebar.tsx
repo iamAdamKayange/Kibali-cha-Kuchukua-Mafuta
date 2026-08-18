@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -91,19 +92,29 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
         initial={{ x: -280 }}
         animate={{ x: isOpen ? 0 : -280 }}
         transition={{ duration: 0.3, type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed left-0 top-0 hidden h-full w-[280px] bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 z-50 flex-col lg:relative lg:flex lg:translate-x-0"
+        className="fixed left-0 top-0 hidden h-full w-[280px] border-r border-white/70 bg-white/[0.88] backdrop-blur-xl dark:border-gray-800/70 dark:bg-gray-950/85 z-50 flex-col lg:relative lg:flex lg:translate-x-0"
       >
         {/* Logo */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+        <div className="p-6 border-b border-gray-200/70 dark:border-gray-800/70">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center">
-              <Fuel className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+            <motion.div
+              whileHover={{ rotateY: 10, rotateX: -6, scale: 1.04 }}
+              style={{ transformPerspective: 600 }}
+              className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-white/70 bg-white p-1.5 shadow-[0_10px_20px_-6px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-white/5"
+            >
+              <Image
+                src="/assets/tanzania-emblem.png"
+                alt="Alama ya Taifa la Tanzania"
+                fill
+                sizes="44px"
+                className="object-contain object-center p-0.5 drop-shadow-[0_4px_6px_rgba(15,23,42,0.25)] dark:mix-blend-screen"
+              />
+            </motion.div>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
                 Kibali Mafuta
               </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {roleLabel(role)}
               </p>
             </div>

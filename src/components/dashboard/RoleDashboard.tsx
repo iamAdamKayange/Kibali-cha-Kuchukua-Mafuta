@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle, Clock, FileText, Fuel, ListChecks, XCircle, type LucideIcon } from 'lucide-react'
+import { Footer } from '@/components/common/Footer'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Sidebar } from '@/components/common/Sidebar'
@@ -113,7 +114,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-transparent">
       <Sidebar role={page.sidebarRole} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -140,7 +141,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.06 }}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+                className="app-panel p-4"
               >
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg bg-gray-50 p-2 dark:bg-gray-800">
@@ -182,12 +183,14 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-gray-200 bg-white p-10 text-center dark:border-gray-800 dark:bg-gray-900">
+            <div className="app-panel p-10 text-center">
               <FileText className="mx-auto mb-3 h-10 w-10 text-gray-400" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Hakuna maombi ya kuonyesha kwa sasa.</h3>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Data itaonekana hapa baada ya backend kurudisha maombi yanayohusika na role yako.</p>
             </div>
           )}
+
+          <Footer />
         </main>
       </div>
     </div>

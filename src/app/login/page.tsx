@@ -61,15 +61,18 @@ export default function LoginPage() {
   const isLoading = loading
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gray-50 p-4 text-gray-900 transition-colors duration-300 dark:bg-gray-950 dark:text-white">
-      <Image
-        src="/assets/tanzania-emblem.png"
-        alt="Alama ya Taifa la Tanzania"
-        fill
-        priority
-        className="object-contain object-center p-10 opacity-[0.12] mix-blend-screen dark:opacity-[0.16]"
-        sizes="100vw"
-      />
+    <div className="relative min-h-screen overflow-hidden bg-transparent p-4 text-gray-900 transition-colors duration-300 dark:text-white">
+      {/*
+        The national-emblem watermark itself now lives in <BrandWatermark />,
+        rendered once (globally) by AppExperience — the same layer that
+        sits behind every other screen. Previously this page painted its
+        own extra copy on top with an unconditional `mix-blend-screen`,
+        which is why it looked fine here but (a) doubled up oddly on this
+        screen only, and (b) nearly disappeared in light mode, since
+        screen-blending a graphic against a light backdrop pushes it
+        toward white. Keeping only the soft gradient wash below lets the
+        shared watermark show through consistently, on every theme.
+      */}
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(240,249,255,0.82),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(135deg,rgba(2,6,23,0.95),rgba(8,47,73,0.76),rgba(2,6,23,0.95))]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(20,184,166,0.08),transparent_30%)] dark:bg-[radial-gradient(circle_at_75%_20%,rgba(20,184,166,0.12),transparent_30%)]" />
 
@@ -92,15 +95,22 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
 
-          <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-white/60 p-1 shadow-2xl shadow-black/10 backdrop-blur dark:bg-white/5 dark:shadow-black/30">
+          <motion.div
+            initial={{ opacity: 0, y: -8, rotateX: 20 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            whileHover={{ rotateY: 8, rotateX: -4, scale: 1.03 }}
+            style={{ transformPerspective: 800 }}
+            className="relative mx-auto h-24 w-24 overflow-hidden rounded-3xl border border-white/70 bg-white/80 p-2 shadow-[0_18px_35px_-10px_rgba(15,23,42,0.35)] backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-[0_18px_35px_-10px_rgba(0,0,0,0.6)]"
+          >
             <Image
               src="/assets/tanzania-emblem.png"
               alt="Alama ya Taifa la Tanzania"
               fill
-              className="object-contain object-center p-1 mix-blend-screen"
+              className="object-contain object-center p-1 drop-shadow-[0_6px_10px_rgba(15,23,42,0.25)] dark:mix-blend-screen"
               sizes="96px"
             />
-          </div>
+          </motion.div>
 
           <h1 className="mt-4 text-2xl font-bold text-gray-900 dark:text-white">
             Kibali cha Kuchukua Mafuta
