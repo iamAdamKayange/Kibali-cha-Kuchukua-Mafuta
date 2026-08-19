@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
-    title: 'Kibali Mafuta',
+    statusBarStyle: 'black-translucent',
+    title: 'Kibali cha Kuchukua Mafuta',
   },
   formatDetection: {
     telephone: false,
