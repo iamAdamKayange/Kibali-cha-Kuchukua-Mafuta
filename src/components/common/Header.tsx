@@ -11,6 +11,7 @@ import { LanguageToggle } from '@/components/i18n/LanguageToggle'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { api } from '@/lib/api'
+import { onForegroundMessage } from '@/lib/pushNotifications'
 
 interface HeaderProps {
   toggleSidebar: () => void
@@ -166,7 +167,43 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
     fetchNotifications()
     const intervalId = window.setInterval(fetchNotifications, 30000)
 
-    return () => window.clearInterval(intervalId)
+    let unsubscribePromise: Promise<(() => void) | null> | null = null
+
+    try {
+      unsubscribePromise = onForegroundMessage((payload) => {
+        if (payload?.notification) {
+          const newNotif: HeaderNotification = {
+            id: payload.messageId || String(Date.now()),
+            title: payload.notification.title || 'Arifa Mpya',
+            message: payload.notification.body || '',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+            requestId: payload.data?.requestId,
+          }
+          
+          // Display push notification in UI immediately
+          showDeviceNotification(newNotif)
+          showInlineNotification(newNotif)
+          
+          // Prepend to current notification state
+          setNotifications((current) => {
+            if (current.some((item) => item.id === newNotif.id)) return current
+            return [newNotif, ...current].slice(0, 8)
+          })
+        }
+      })
+    } catch (e) {
+      console.warn('Could not set up foreground messaging listener:', e)
+    }
+
+    return () => {
+      window.clearInterval(intervalId)
+      if (unsubscribePromise) {
+        unsubscribePromise.then((unsub) => {
+          if (unsub) unsub()
+        })
+      }
+    }
   }, [authUser?.id])
 
   useEffect(() => {

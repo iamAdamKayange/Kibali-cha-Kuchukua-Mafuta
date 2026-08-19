@@ -1,4 +1,4 @@
-import { getMessaging, getToken, deleteToken, isSupported } from 'firebase/messaging'
+import { getMessaging, getToken, deleteToken, isSupported, onMessage } from 'firebase/messaging'
 import { api } from '@/lib/api'
 import { firebaseVapidKey, getFirebaseApp, hasFirebaseMessagingConfig } from '@/lib/firebase'
 
@@ -139,4 +139,35 @@ export async function unregisterDevicePushToken() {
 
   localStorage.removeItem(DEVICE_TOKEN_KEY)
 }
+
+export async function onForegroundMessage(callback: (payload: any) => void) {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  if (!hasFirebaseMessagingConfig()) {
+    return null
+  }
+
+  const supported = await isSupported().catch(() => false)
+  if (!supported) {
+    return null
+  }
+
+  const app = getFirebaseApp()
+  if (!app) {
+    return null
+  }
+
+  try {
+    const messaging = getMessaging(app)
+    return onMessage(messaging, (payload) => {
+      callback(payload)
+    })
+  } catch (error) {
+    console.warn('Failed to listen to foreground messages:', error)
+    return null
+  }
+}
+
 

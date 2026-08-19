@@ -159,7 +159,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+    <main className="min-h-screen bg-transparent text-slate-900 transition-colors duration-300 dark:text-slate-100">
       
       {/* Background Ornaments / Gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
