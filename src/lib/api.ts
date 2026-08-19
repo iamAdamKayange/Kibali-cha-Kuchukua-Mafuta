@@ -1,3 +1,5 @@
+import { getCookie, setCookie, deleteCookie } from '@/lib/cookies'
+
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
   'https://fuel-request-backend.onrender.com/api'
@@ -40,7 +42,7 @@ export class ApiClient {
 
   private constructor() {
     if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('token')
+      this.token = getCookie('token') || localStorage.getItem('token')
     }
   }
 
@@ -60,6 +62,7 @@ export class ApiClient {
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', token)
+      setCookie('token', token, 7)
     }
   }
 
@@ -78,6 +81,7 @@ export class ApiClient {
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token')
+      deleteCookie('token')
     }
   }
 

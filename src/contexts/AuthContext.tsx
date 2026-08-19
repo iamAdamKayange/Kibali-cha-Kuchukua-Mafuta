@@ -9,6 +9,7 @@ import React, {
 } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { getCookie, setCookie, deleteCookie } from '@/lib/cookies'
 import {
   registerDevicePushToken,
   unregisterDevicePushToken,
@@ -56,7 +57,7 @@ export function AuthProvider({
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window === 'undefined') return null
 
-    const accessToken = localStorage.getItem('token')
+    const accessToken = getCookie('token') || localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
 
     if (!accessToken || !storedUser) return null
@@ -71,7 +72,7 @@ export function AuthProvider({
   })
   const [loading, setLoading] = useState(() => {
     if (typeof window === 'undefined') return true
-    return Boolean(localStorage.getItem('token'))
+    return Boolean(getCookie('token') || localStorage.getItem('token'))
   })
 
   /**
@@ -89,7 +90,7 @@ export function AuthProvider({
     }
 
     try {
-      const accessToken = localStorage.getItem('token')
+      const accessToken = getCookie('token') || localStorage.getItem('token')
       const storedUser = localStorage.getItem('user')
 
       /**
@@ -265,12 +266,14 @@ export function AuthProvider({
         'token',
         accessToken
       )
+      setCookie('token', accessToken, 7)
 
       if (refreshToken) {
         localStorage.setItem(
           'refreshToken',
           refreshToken
         )
+        setCookie('refreshToken', refreshToken, 30)
       }
 
       localStorage.setItem(
@@ -399,10 +402,15 @@ function clearStoredSession() {
     localStorage.removeItem('token')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
+    deleteCookie('token')
+    deleteCookie('refreshToken')
   }
 
   api.clearToken()
 }
+
+
+
 
 /**
  * ------------------------------------------------

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { FuelRequest } from '@/types'
 
 interface MockRequest {
@@ -98,6 +99,7 @@ export function RequestCard({
   request,
   onViewDetails,
 }: RequestCardProps) {
+  const router = useRouter()
 
   const getStatus = (
     status: string
@@ -194,6 +196,17 @@ export function RequestCard({
   const date = getDate(request)
   const currentStage = getWorkflowStageLabel(request)
 
+  const handleClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, a')) {
+      return
+    }
+    if (onViewDetails) {
+      onViewDetails(request.id)
+    } else {
+      router.push(`/requests/${request.id}`)
+    }
+  }
+
   return (
     <motion.div
       initial={{
@@ -207,7 +220,8 @@ export function RequestCard({
       whileHover={{
         y: -4,
       }}
-      className="bg-white dark:bg-gray-900 rounded-2xl shadow-card hover:shadow-card-hover dark:shadow-card-dark border border-gray-200 dark:border-gray-800 p-5 transition-all duration-300"
+      onClick={handleClick}
+      className="bg-white dark:bg-gray-900 rounded-2xl shadow-card hover:shadow-card-hover dark:shadow-card-dark border border-gray-200 dark:border-gray-800 p-5 transition-all duration-300 cursor-pointer"
     >
 
       {/* Header */}

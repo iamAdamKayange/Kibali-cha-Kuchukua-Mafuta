@@ -9,6 +9,7 @@ import { Sidebar } from '@/components/common/Sidebar'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Toast } from '@/components/common/Toast'
 import { getUserDisplayName, roleToDashboard, useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { api } from '@/lib/api'
 import { motion } from 'framer-motion'
 
@@ -36,10 +37,12 @@ function SwipeNotification({
   notification,
   onDelete,
   onOpen,
+  language,
 }: {
   notification: AppNotification
   onDelete: (id: string) => void
   onOpen: (notification: AppNotification) => void
+  language: string
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl">
@@ -66,13 +69,13 @@ function SwipeNotification({
             <div>
               <h2 className="font-semibold text-gray-900 dark:text-white">{notification.title}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">{notification.message}</p>
-              <p className="mt-2 text-xs text-gray-400">{new Date(notification.createdAt).toLocaleString()}</p>
+              <p className="mt-2 text-xs text-gray-400">{new Date(notification.createdAt).toLocaleString(language === 'sw' ? 'sw-TZ' : 'en-US')}</p>
             </div>
           </div>
           <button
             onClick={(event) => {
-              event.stopPropagation()
-              onDelete(notification.id)
+               event.stopPropagation()
+               onDelete(notification.id)
             }}
             className="rounded-lg p-2 text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20"
             aria-label="Delete notification"
@@ -88,6 +91,7 @@ function SwipeNotification({
 export default function NotificationsPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { t, language } = useLanguage()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(true)
@@ -161,13 +165,13 @@ export default function NotificationsPage() {
                   <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                 </Link>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
-                  <p className="text-gray-500 dark:text-gray-400">Read, manage, and delete your notifications.</p>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('notifications_title')}</h1>
+                  <p className="text-gray-500 dark:text-gray-400">{t('notifications_subtitle')}</p>
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={markAllRead} className="rounded-xl border border-gray-200 px-4 py-2 text-sm dark:border-gray-700 dark:text-gray-200 flex items-center gap-2"><CheckCheck className="h-4 w-4" />Mark all read</button>
-                <button onClick={clearAll} className="rounded-xl bg-danger-500 px-4 py-2 text-sm text-white flex items-center gap-2"><Trash2 className="h-4 w-4" />Clear</button>
+                <button onClick={markAllRead} className="rounded-xl border border-gray-200 px-4 py-2 text-sm dark:border-gray-700 dark:text-gray-200 flex items-center gap-2"><CheckCheck className="h-4 w-4" />{t('mark_all_read')}</button>
+                <button onClick={clearAll} className="rounded-xl bg-danger-500 px-4 py-2 text-sm text-white flex items-center gap-2"><Trash2 className="h-4 w-4" />{t('clear_all')}</button>
               </div>
             </div>
 
@@ -180,11 +184,12 @@ export default function NotificationsPage() {
                   notification={notification}
                   onDelete={deleteNotification}
                   onOpen={openNotification}
+                  language={language}
                 />
               )) : (
                 <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center dark:border-gray-800 dark:bg-gray-900">
                   <Bell className="mx-auto mb-3 h-10 w-10 text-gray-400" />
-                  <h2 className="font-semibold text-gray-900 dark:text-white">No notifications yet.</h2>
+                  <h2 className="font-semibold text-gray-900 dark:text-white">{t('no_notifications')}</h2>
                 </div>
               )}
             </div>

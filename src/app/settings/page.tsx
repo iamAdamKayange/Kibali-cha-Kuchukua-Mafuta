@@ -7,6 +7,7 @@ import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { LanguageToggle } from '@/components/i18n/LanguageToggle'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { getUserDisplayName, roleToDashboard, useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import Link from 'next/link'
 import { ArrowLeft, Bell, Languages, Moon, User } from 'lucide-react'
 
@@ -22,6 +23,7 @@ function roleToSidebarRole(role?: string) {
 
 export default function SettingsPage() {
   const { user, loading } = useAuth()
+  const { t } = useLanguage()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
@@ -51,8 +53,8 @@ export default function SettingsPage() {
                 <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-                <p className="mt-1 text-gray-500 dark:text-gray-400">Manage your display, language, and notification preferences.</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('settings_title')}</h1>
+                <p className="mt-1 text-gray-500 dark:text-gray-400">{t('settings_subtitle')}</p>
               </div>
             </div>
 
@@ -61,8 +63,8 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3">
                   <Moon className="h-5 w-5 text-primary-500" />
                   <div>
-                    <h2 className="font-semibold text-gray-900 dark:text-white">Theme</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Switch between light and dark mode.</p>
+                    <h2 className="font-semibold text-gray-900 dark:text-white">{t('theme')}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('theme_desc')}</p>
                   </div>
                 </div>
                 <ThemeToggle />
@@ -72,8 +74,8 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3">
                   <Languages className="h-5 w-5 text-primary-500" />
                   <div>
-                    <h2 className="font-semibold text-gray-900 dark:text-white">Language</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Toggle English and Kiswahili.</p>
+                    <h2 className="font-semibold text-gray-900 dark:text-white">{t('language')}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('language_desc')}</p>
                   </div>
                 </div>
                 <LanguageToggle />
@@ -83,8 +85,8 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3">
                   <Bell className="h-5 w-5 text-primary-500" />
                   <div>
-                    <h2 className="font-semibold text-gray-900 dark:text-white">Notifications</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Show notification reminders inside the app.</p>
+                    <h2 className="font-semibold text-gray-900 dark:text-white">{t('notifications')}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings_notifications_desc')}</p>
                   </div>
                 </div>
                 <button
@@ -98,8 +100,8 @@ export default function SettingsPage() {
               <Link href="/profile" className="glass-card rounded-2xl p-5 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-900/70">
                 <User className="h-5 w-5 text-primary-500" />
                 <div>
-                  <h2 className="font-semibold text-gray-900 dark:text-white">Profile</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Edit your details or change password.</p>
+                  <h2 className="font-semibold text-gray-900 dark:text-white">{t('profile')}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile_desc')}</p>
                 </div>
               </Link>
             </div>

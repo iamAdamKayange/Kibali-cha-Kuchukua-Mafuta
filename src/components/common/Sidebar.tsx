@@ -47,20 +47,20 @@ const navItems: Record<string, Array<{ icon: LucideIcon; labelKey: string; href:
   ],
 }
 
-function roleLabel(role: string) {
+function roleLabel(role: string, t: (key: string) => string) {
   switch (role) {
     case 'admin':
-      return 'Msimamizi'
+      return t('role_admin')
     case 'mwombaji':
-      return 'Mwombaji/Dereva'
+      return t('role_driver')
     case 'mkuu-idara':
-      return 'Mkuu wa Idara'
+      return t('role_mkuu_idara')
     case 'afisa-usafirishaji':
-      return 'Afisa Usafirishaji'
+      return t('role_afisa_usafirishaji')
     case 'ada-dahrm':
-      return 'ADA'
+      return t('role_ada')
     case 'ununuzi-ugavi':
-      return 'Ununuzi na Ugavi'
+      return t('role_procurement')
     default:
       return role.replace('-', ' ').toUpperCase()
   }
@@ -115,7 +115,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                 Kibali Mafuta
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {roleLabel(role)}
+                {roleLabel(role, t)}
               </p>
             </div>
           </div>

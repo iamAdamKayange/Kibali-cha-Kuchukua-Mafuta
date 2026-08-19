@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Sidebar } from '@/components/common/Sidebar'
 import { Toast } from '@/components/common/Toast'
 import { getUserDepartmentName, getUserDisplayName, roleToDashboard, useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { api } from '@/lib/api'
 
 type SidebarRole = 'admin' | 'mwombaji' | 'mkuu-idara' | 'afisa-usafirishaji' | 'ada-dahrm' | 'ununuzi-ugavi'
@@ -24,29 +25,31 @@ function roleToSidebarRole(role?: string): SidebarRole {
   return 'mwombaji'
 }
 
-function roleLabel(role?: string) {
+function roleLabel(role?: string, t?: (key: string) => string) {
+  if (!t) return role || 'Mwombaji'
   switch (String(role || '').toUpperCase()) {
     case 'ADMIN':
-      return 'Msimamizi'
+      return t('role_admin')
     case 'DRIVER':
     case 'MWOMBAJI':
-      return 'Mwombaji/Dereva'
+      return t('role_driver')
     case 'HEAD_OF_DEPARTMENT':
-      return 'Mkuu wa Idara'
+      return t('role_mkuu_idara')
     case 'TRANSPORT_OFFICER':
-      return 'Afisa Usafirishaji'
+      return t('role_afisa_usafirishaji')
     case 'ADA_DAHRM':
-      return 'ADA'
+      return t('role_ada')
     case 'PROCUREMENT':
-      return 'Ununuzi na Ugavi'
+      return t('role_procurement')
     default:
-      return role || 'Mwombaji'
+      return role || t('role_driver')
   }
 }
 
 export default function ProfilePage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { t } = useLanguage()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [savingProfile, setSavingProfile] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
@@ -103,7 +106,7 @@ export default function ProfilePage() {
     if (response.data) {
       localStorage.setItem('user', JSON.stringify(response.data))
     }
-    setToast({ type: 'success', message: 'Profile updated successfully. Please refresh if the header still shows old details.' })
+    setToast({ type: 'success', message: t('profile_updated') })
   }
 
   const handlePasswordSubmit = async (event: FormEvent) => {
@@ -124,7 +127,7 @@ export default function ProfilePage() {
     }
 
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
-    setToast({ type: 'success', message: 'Password changed successfully.' })
+    setToast({ type: 'success', message: t('password_changed') })
   }
 
   if (authLoading || !user) {
@@ -156,9 +159,9 @@ export default function ProfilePage() {
                 <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('profile_title')}</h1>
                 <p className="mt-1 text-gray-500 dark:text-gray-400">
-                  Update your account details and change your password.
+                  {t('profile_subtitle')}
                 </p>
               </div>
             </div>
@@ -183,7 +186,7 @@ export default function ProfilePage() {
                 <div className="mt-6 space-y-3 rounded-xl bg-gray-50 p-4 text-sm dark:bg-gray-900/60">
                   <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                     <Shield className="h-4 w-4 text-primary-500" />
-                    <span>{roleLabel(user.role)}</span>
+                    <span>{roleLabel(user.role, t)}</span>
                   </div>
                   <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                     <Building className="h-4 w-4 text-primary-500" />
@@ -203,10 +206,10 @@ export default function ProfilePage() {
                   onSubmit={handleProfileSubmit}
                   className="glass-card rounded-2xl p-6"
                 >
-                  <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Personal details</h2>
+                  <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{t('personal_details')}</h2>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="input-label">First name</label>
+                      <label className="input-label">{t('first_name')}</label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                         <input
@@ -218,7 +221,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div>
-                      <label className="input-label">Last name</label>
+                      <label className="input-label">{t('last_name')}</label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                         <input
@@ -243,7 +246,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div>
-                      <label className="input-label">Phone</label>
+                      <label className="input-label">{t('phone_number')}</label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                         <input
@@ -259,7 +262,7 @@ export default function ProfilePage() {
                   <div className="mt-6 flex justify-end border-t border-gray-200 pt-4 dark:border-gray-800">
                     <button type="submit" disabled={savingProfile} className="btn-primary flex items-center gap-2 px-6 py-3">
                       {savingProfile ? <LoadingSpinner size="sm" /> : <Save className="h-5 w-5" />}
-                      Save profile
+                      {t('save_profile')}
                     </button>
                   </div>
                 </motion.form>
@@ -271,10 +274,10 @@ export default function ProfilePage() {
                   onSubmit={handlePasswordSubmit}
                   className="glass-card rounded-2xl p-6"
                 >
-                  <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Change password</h2>
+                  <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{t('change_password')}</h2>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
-                      <label className="input-label">Current password</label>
+                      <label className="input-label">{t('current_password')}</label>
                       <div className="relative">
                         <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                         <input
@@ -288,7 +291,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div>
-                      <label className="input-label">New password</label>
+                      <label className="input-label">{t('new_password')}</label>
                       <div className="relative">
                         <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                         <input
@@ -302,7 +305,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div>
-                      <label className="input-label">Confirm password</label>
+                      <label className="input-label">{t('confirm_password')}</label>
                       <div className="relative">
                         <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                         <input
@@ -320,7 +323,7 @@ export default function ProfilePage() {
                   <div className="mt-6 flex justify-end border-t border-gray-200 pt-4 dark:border-gray-800">
                     <button type="submit" disabled={changingPassword} className="btn-primary flex items-center gap-2 px-6 py-3">
                       {changingPassword ? <LoadingSpinner size="sm" /> : <KeyRound className="h-5 w-5" />}
-                      Change password
+                      {t('change_password')}
                     </button>
                   </div>
                 </motion.form>

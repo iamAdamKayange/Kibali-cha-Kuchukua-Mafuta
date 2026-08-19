@@ -8,7 +8,11 @@ import {
   FileText,
   Fuel,
   XCircle,
+  ArrowRight,
+  X
 } from 'lucide-react'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 import { Sidebar } from '@/components/common/Sidebar'
 import { Header } from '@/components/common/Header'
@@ -17,6 +21,45 @@ import { useRequests } from '@/hooks/useRequests'
 
 export default function AdminReportsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [selectedFilter, setSelectedFilter] = useState<{
+    title: string
+    requests: typeof requests
+  } | null>(null)
+
+  const getDepartmentName = (req: typeof requests[0]) => {
+    const dep = req.department
+    if (!dep) return 'N/A'
+    if (typeof dep === 'string') return dep
+    if (typeof dep === 'object' && 'name' in dep) return dep.name
+    return 'N/A'
+  }
+
+  const handleStatCardClick = (label: string) => {
+    let filtered = requests
+    if (label === 'Yanasubiri') {
+      filtered = requests.filter((req) => {
+        const s = String(req.status).toLowerCase()
+        return s.includes('pending') || s === 'submitted'
+      })
+    } else if (label === 'Yameidhinishwa') {
+      filtered = requests.filter((req) =>
+        ['approved', 'APPROVED', 'COMPLETED', 'completed', 'FUEL_ISSUED', 'fuel_issued'].includes(String(req.status).toUpperCase())
+      )
+    } else if (label === 'Yamekataliwa') {
+      filtered = requests.filter((req) =>
+        ['rejected', 'REJECTED'].includes(String(req.status).toUpperCase())
+      )
+    } else if (label === 'Jumla ya Lita') {
+      filtered = requests.filter(
+        (req) => Number(req.issuedLitres || req.approvedLitres || req.litres || req.requestedLitres || 0) > 0
+      )
+    }
+
+    setSelectedFilter({
+      title: label,
+      requests: filtered,
+    })
+  }
 
   const {
     requests,
@@ -193,7 +236,8 @@ export default function AdminReportsPage() {
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
-                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+                    onClick={() => handleStatCardClick(stat.label)}
+                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 cursor-pointer hover:border-primary-500/40 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
                       <div className="rounded-lg bg-gray-50 p-2 dark:bg-gray-800">
@@ -273,6 +317,63 @@ export default function AdminReportsPage() {
           )}
         </main>
       </div>
+
+      {/* Filter Modal Dialog */}
+      {selectedFilter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
+          >
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-950/20">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedFilter.title}</h3>
+              <button 
+                onClick={() => setSelectedFilter(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-3 flex-1 bg-white dark:bg-slate-900">
+              {selectedFilter.requests.length > 0 ? (
+                selectedFilter.requests.map((req) => (
+                  <Link 
+                    key={req.id} 
+                    href={`/requests/${req.id}`}
+                    onClick={() => setSelectedFilter(null)}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950/40 hover:border-primary-500/40 transition-all duration-200 group"
+                  >
+                    <div>
+                      <p className="font-bold text-sm text-slate-950 dark:text-white group-hover:text-primary-500 transition-colors">
+                        {req.requestNumber}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {req.applicantName || (req as any).applicant || 'Mwombaji'} • {getDepartmentName(req)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 sm:mt-0">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {req.litres || (req as any).requestedLitres || 0}L ({(req.fuelType || '').toLowerCase()})
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(req.createdAt || (req as any).date).toLocaleDateString('sw-TZ')}
+                      </span>
+                      <span className="text-xs font-semibold text-primary-500 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                        Angalia <ArrowRight className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-sm">
+                  Hakuna maombi katika kundi hili kwa sasa.
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

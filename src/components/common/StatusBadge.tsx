@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface StatusBadgeProps {
   status: string
@@ -104,8 +105,34 @@ const sizeClasses = {
   lg: 'px-3 py-1.5 text-sm',
 }
 
+const statusTranslationKeyMap: Record<string, string> = {
+  pending: 'status_pending',
+  submitted: 'status_submitted',
+  approved: 'status_approved',
+  rejected: 'status_rejected',
+  completed: 'status_completed',
+  PENDING: 'status_pending',
+  PENDING_HEAD_APPROVAL: 'status_pending_head',
+  PENDING_TRANSPORT_APPROVAL: 'status_pending_transport',
+  PENDING_DA_APPROVAL: 'status_pending_da',
+  PENDING_FUEL_ISSUANCE: 'status_pending_fuel',
+  SUBMITTED: 'status_submitted',
+  APPROVED: 'status_approved',
+  HEAD_APPROVED: 'status_head_approved',
+  TRANSPORT_APPROVED: 'status_transport_approved',
+  ADA_APPROVED: 'status_ada_approved',
+  REJECTED: 'status_rejected',
+  HEAD_REJECTED: 'status_head_rejected',
+  TRANSPORT_REJECTED: 'status_transport_rejected',
+  ADA_REJECTED: 'status_ada_rejected',
+  COMPLETED: 'status_completed_badge',
+  CANCELLED: 'status_cancelled',
+}
+
 export function StatusBadge({ status, className, size = 'md' }: StatusBadgeProps) {
+  const { t } = useLanguage()
   const config = statusConfig[status] || statusConfig.pending
+  const translationKey = statusTranslationKeyMap[status] || 'status_pending'
 
   return (
     <span className={cn(
@@ -115,7 +142,7 @@ export function StatusBadge({ status, className, size = 'md' }: StatusBadgeProps
       className
     )}>
       <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current" />
-      {config.label}
+      {t(translationKey)}
     </span>
   )
 }

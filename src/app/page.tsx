@@ -720,14 +720,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. Footer (Professional Dark Footer) */}
-      <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-800 z-10 relative">
+      {/* 7. Footer (Professional Theme-aware Footer) */}
+      <footer className="bg-slate-100 text-slate-600 py-16 border-t border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 z-10 relative transition-colors duration-300">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
           
           {/* Column 1: System info & Emblem */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="relative h-9 w-9 overflow-hidden rounded-lg bg-white p-1 shadow-inner">
+              <div className="relative h-9 w-9 overflow-hidden rounded-lg bg-white p-1 shadow-inner border border-slate-200 dark:border-slate-800">
                 <Image
                   src="/assets/tanzania-emblem.png"
                   alt="Alama ya Taifa la Tanzania"
@@ -736,36 +736,36 @@ export default function HomePage() {
                   className="object-contain"
                 />
               </div>
-              <span className="text-base font-black text-white tracking-tight">
+              <span className="text-base font-black text-slate-900 dark:text-white tracking-tight">
                 {t.systemName}
               </span>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+            <p className="text-xs text-slate-555 dark:text-slate-400 leading-relaxed max-w-xs">
               Mfumo Rasmi wa Serikali kwa Ajili ya Kupitisha, Kuomba na Kusimamia Vibali vya Mafuta vya Magari ya Wizara kwa Njia ya Kielektroniki.
             </p>
           </div>
 
           {/* Column 2: Navigation Links */}
           <div className="space-y-4">
-            <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">{isSw ? 'Urambazaji' : 'Navigation'}</h4>
+            <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">{isSw ? 'Urambazaji' : 'Navigation'}</h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="#home" className="hover:text-teal-400 transition-colors">
+                <Link href="#home" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
                   {t.navHome}
                 </Link>
               </li>
               <li>
-                <Link href="#about" className="hover:text-teal-400 transition-colors">
+                <Link href="#about" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
                   {t.navAbout}
                 </Link>
               </li>
               <li>
-                <Link href="#how-it-works" className="hover:text-teal-400 transition-colors">
+                <Link href="#how-it-works" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
                   {t.navWorkflow}
                 </Link>
               </li>
               <li>
-                <Link href="#contact" className="hover:text-teal-400 transition-colors">
+                <Link href="#contact" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
                   {t.navContact}
                 </Link>
               </li>
@@ -774,18 +774,18 @@ export default function HomePage() {
 
           {/* Column 3: Msaada / Support */}
           <div className="space-y-4">
-            <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">{isSw ? 'Msaada' : 'Support'}</h4>
+            <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">{isSw ? 'Msaada' : 'Support'}</h4>
             <ul className="space-y-2 text-xs">
               <li className="flex items-center gap-2">
-                <Phone className="h-3.5 w-3.5 text-teal-500" />
+                <Phone className="h-3.5 w-3.5 text-teal-600 dark:text-teal-500" />
                 <span>+255 (0) 26 2961800</span>
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-teal-500" />
+                <Mail className="h-3.5 w-3.5 text-teal-600 dark:text-teal-500" />
                 <span>support@mafuta.go.tz</span>
               </li>
               <li className="flex items-start gap-2">
-                <MapPin className="h-3.5 w-3.5 text-teal-500 shrink-0" />
+                <MapPin className="h-3.5 w-3.5 text-teal-600 dark:text-teal-500 shrink-0 mt-0.5" />
                 <span className="leading-tight">Dodoma, Tanzania</span>
               </li>
             </ul>
@@ -793,13 +793,13 @@ export default function HomePage() {
 
           {/* Column 4: Vyeti / Badges */}
           <div className="space-y-4">
-            <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">G2G Portal</h4>
+            <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">G2G Portal</h4>
             <div className="flex flex-col gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded bg-slate-900 px-2.5 py-1 text-[10px] font-bold text-teal-400 border border-teal-500/10 w-fit">
+              <span className="inline-flex items-center gap-1.5 rounded bg-slate-200/50 dark:bg-slate-900 px-2.5 py-1 text-[10px] font-bold text-slate-800 dark:text-teal-400 border border-slate-300 dark:border-teal-500/10 w-fit">
                 <Award className="h-3.5 w-3.5" />
                 <span>e-Government Approved</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded bg-slate-900 px-2.5 py-1 text-[10px] font-bold text-teal-400 border border-teal-500/10 w-fit">
+              <span className="inline-flex items-center gap-1.5 rounded bg-slate-200/50 dark:bg-slate-900 px-2.5 py-1 text-[10px] font-bold text-slate-800 dark:text-teal-400 border border-slate-300 dark:border-teal-500/10 w-fit">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 <span>SSL Encrypted Connection</span>
               </span>
@@ -809,7 +809,7 @@ export default function HomePage() {
         </div>
 
         {/* Legal & Copyright */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-900 text-center text-xs text-slate-500">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-200 dark:border-slate-900 text-center text-xs text-slate-500">
           <p>© {new Date().getFullYear()} {t.copyright}</p>
         </div>
       </footer>

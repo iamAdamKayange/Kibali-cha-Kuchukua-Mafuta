@@ -57,10 +57,51 @@ export function AppExperience({ children }: { children: React.ReactNode }) {
   )
 
   useEffect(() => {
-    if (!loading && isProtectedRoute && !user) {
+    if (loading) return
+
+    if (isProtectedRoute && !user) {
       router.replace('/login')
+      return
     }
-  }, [isProtectedRoute, loading, router, user])
+
+    if (user && pathname) {
+      const userRole = user.role.toUpperCase()
+      const roleDashboardMap: Record<string, string> = {
+        ADMIN: '/dashboard/admin',
+        DRIVER: '/dashboard/mwombaji',
+        MWOMBAJI: '/dashboard/mwombaji',
+        HEAD_OF_DEPARTMENT: '/dashboard/mkuu-idara',
+        TRANSPORT_OFFICER: '/dashboard/afisa-usafirishaji',
+        ADA_DAHRM: '/dashboard/ada-dahrm',
+        PROCUREMENT: '/dashboard/ununuzi-ugavi',
+      }
+
+      const routeRoleMap = [
+        { prefix: '/dashboard/admin', role: 'ADMIN' },
+        { prefix: '/dashboard/mwombaji', role: 'DRIVER' },
+        { prefix: '/dashboard/mkuu-idara', role: 'HEAD_OF_DEPARTMENT' },
+        { prefix: '/dashboard/afisa-usafirishaji', role: 'TRANSPORT_OFFICER' },
+        { prefix: '/dashboard/ada-dahrm', role: 'ADA_DAHRM' },
+        { prefix: '/dashboard/ununuzi-ugavi', role: 'PROCUREMENT' },
+      ]
+
+      for (const route of routeRoleMap) {
+        if (pathname.startsWith(route.prefix)) {
+          const isAllowed = 
+            route.role === 'DRIVER'
+              ? (userRole === 'DRIVER' || userRole === 'MWOMBAJI')
+              : (userRole === route.role)
+
+          if (!isAllowed) {
+            console.warn(`Redirecting unauthorized path request: ${pathname} for ${userRole}`)
+            const target = roleDashboardMap[userRole] || '/dashboard/mwombaji'
+            router.replace(target)
+            return
+          }
+        }
+      }
+    }
+  }, [isProtectedRoute, loading, router, user, pathname])
 
   const showBottomNav = Boolean(isProtectedRoute && user && !pathname?.startsWith('/login'))
   const items = getItems(user?.role)

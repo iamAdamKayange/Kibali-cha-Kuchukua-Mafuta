@@ -375,7 +375,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                       </motion.div>
                     )) : (
                       <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                        Hakuna arifa mpya.
+                        {t('no_notifications')}
                       </div>
                     )}
                   </div>
@@ -412,7 +412,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                 >
                   <div className="p-4 border-b border-gray-200 dark:border-gray-800">
                     <p className="font-medium text-gray-900 dark:text-white">{user?.name || 'Adam'}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{formatRoleLabel(user?.role)}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{formatRoleLabel(user?.role, t)}</p>
                   </div>
                   <div className="p-2">
                     <Link
@@ -481,24 +481,25 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
   )
 }
 
-function formatRoleLabel(role?: string) {
+function formatRoleLabel(role?: string, t?: (key: string) => string) {
   const normalized = String(role || '').trim().toUpperCase()
+  if (!t) return role || ''
 
   switch (normalized) {
     case 'ADMIN':
-      return 'Msimamizi'
+      return t('role_admin')
     case 'DRIVER':
     case 'MWOMBAJI':
-      return 'Mwombaji/Dereva'
+      return t('role_driver')
     case 'HEAD_OF_DEPARTMENT':
-      return 'Mkuu wa Idara'
+      return t('role_mkuu_idara')
     case 'TRANSPORT_OFFICER':
-      return 'Afisa Usafirishaji'
+      return t('role_afisa_usafirishaji')
     case 'ADA_DAHRM':
-      return 'ADA'
+      return t('role_ada')
     case 'PROCUREMENT':
-      return 'Ununuzi na Ugavi'
+      return t('role_procurement')
     default:
-      return role || 'Mwombaji'
+      return role || t('role_driver')
   }
 }
