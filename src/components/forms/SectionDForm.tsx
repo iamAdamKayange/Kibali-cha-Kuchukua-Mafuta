@@ -14,6 +14,7 @@ export interface SectionDData {
 
 interface SectionDFormProps {
   onSubmit: (data: SectionDData) => void
+  loading?: boolean
   requestData?: {
     applicant: string
     department: string
@@ -24,7 +25,7 @@ interface SectionDFormProps {
   initialData?: Partial<SectionDData>
 }
 
-export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFormProps) {
+export function SectionDForm({ onSubmit, loading, requestData, initialData }: SectionDFormProps) {
   const [formData, setFormData] = useState<SectionDData>({
     naridhia: initialData?.naridhia ?? true,
     lita: initialData?.lita || requestData?.litres || 0,
@@ -75,6 +76,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
           <div className="flex gap-2">
             <button
               type="button"
+              disabled={loading}
               onClick={() => setFormData({ ...formData, naridhia: true, sababu: '' })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
                 formData.naridhia
@@ -87,6 +89,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
             </button>
             <button
               type="button"
+              disabled={loading}
               onClick={() => setFormData({ ...formData, naridhia: false })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
                 !formData.naridhia
@@ -114,7 +117,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
               min="0"
               step="0.1"
               readOnly
-              disabled={isRejected}
+              disabled={isRejected || loading}
             />
           </div>
         </div>
@@ -131,6 +134,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
               className="input-field pl-10 min-h-[80px]"
               placeholder={isRejected ? 'Andika sababu ya kukataa...' : 'Andika sababu (hiari)'}
               required={isRejected}
+              disabled={loading}
             />
           </div>
         </div>
@@ -147,6 +151,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
               className="input-field pl-10"
               placeholder="T 123 ABC"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -163,6 +168,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
               className="input-field pl-10"
               placeholder="Ingiza cheo chako"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -178,6 +184,7 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
               onChange={(e) => setFormData({ ...formData, tarehe: e.target.value })}
               className="input-field pl-10"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -190,13 +197,16 @@ export function SectionDForm({ onSubmit, requestData, initialData }: SectionDFor
       <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
         <button
           type="submit"
-          className={`px-8 py-3 text-base rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 ${
+          disabled={loading}
+          className={`px-8 py-3 text-base rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-70 ${
             formData.naridhia
               ? 'btn-success'
               : 'btn-danger'
           }`}
         >
-          {formData.naridhia ? (
+          {loading ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : formData.naridhia ? (
             <>
               <CheckCircle className="w-5 h-5" />
               Idhinisha

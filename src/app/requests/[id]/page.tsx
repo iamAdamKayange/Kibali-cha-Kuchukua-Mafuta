@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building, Calendar, Car, FileText, Fuel, Gauge, MapPin, User } from 'lucide-react'
+import { ArrowLeft, Building, Calendar, Car, CheckCircle, FileText, Fuel, Gauge, MapPin, User } from 'lucide-react'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Sidebar } from '@/components/common/Sidebar'
@@ -147,6 +147,8 @@ export default function RequestDetailPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [request, setRequest] = useState<DetailRequest | null>(null)
   const [actionError, setActionError] = useState('')
+  const [actionLoading, setActionLoading] = useState(false)
+  const [successToast, setSuccessToast] = useState<string | null>(null)
   const { user } = useAuth()
   const { fetchRequest, approveRequest, rejectRequest, issueFuel, loading, error } = useRequests({ autoFetch: false })
   const role = sidebarRole(user?.role)
@@ -189,85 +191,108 @@ export default function RequestDetailPage() {
 
 const submitHead = async (data: SectionBData) => {
   setActionError('')
+  setActionLoading(true)
 
-  const result =
-    data.idhini === 'naridhia'
-      ? await approveRequest(id, 'head', {
-          ...audit,
-          approved: true,
-          reason: data.sababu,
-          designation: data.cheo,
-        })
-      : await rejectRequest(id, 'head', data.sababu)
+  try {
+    const result =
+      data.idhini === 'naridhia'
+        ? await approveRequest(id, 'head', {
+            ...audit,
+            approved: true,
+            reason: data.sababu,
+            designation: data.cheo,
+          })
+        : await rejectRequest(id, 'head', data.sababu)
 
-  if (result) {
-    await afterAction()
-  } else {
-    setActionError(
-      'Action failed. Please check the reason/designation and try again.'
-    )
+    if (result) {
+      setSuccessToast(data.idhini === 'naridhia' ? 'Ombi limeidhinishwa kikamilifu!' : 'Ombi limekataliwa.')
+      await afterAction()
+    } else {
+      setActionError('Action failed. Please check the reason/designation and try again.')
+    }
+  } finally {
+    setActionLoading(false)
   }
 }
+
 const submitTransport = async (data: SectionCData) => {
   setActionError('')
+  setActionLoading(true)
 
-  const result = data.apewe
-    ? await approveRequest(id, 'transport', {
-        ...audit,
-        approved: true,
-        litresApproved: data.lita,
-        reason: data.sababu,
-        logbookNumber: data.logbookNamba,
-        logbookTo: data.to,
-        designation: data.cheo,
-      })
-    : await rejectRequest(id, 'transport', data.sababu)
+  try {
+    const result = data.apewe
+      ? await approveRequest(id, 'transport', {
+          ...audit,
+          approved: true,
+          litresApproved: data.lita,
+          reason: data.sababu,
+          logbookNumber: data.logbookNamba,
+          logbookTo: data.to,
+          designation: data.cheo,
+        })
+      : await rejectRequest(id, 'transport', data.sababu)
 
-  if (result) {
-    await afterAction()
-  } else {
-    setActionError(
-      'Action failed. Please check the required fields and try again.'
-    )
+    if (result) {
+      setSuccessToast(data.apewe ? 'Ukaguzi wa usafirishaji umekamilika!' : 'Ombi limekataliwa.')
+      await afterAction()
+    } else {
+      setActionError('Action failed. Please check the required fields and try again.')
+    }
+  } finally {
+    setActionLoading(false)
   }
 }
 
 const submitAda = async (data: SectionDData) => {
   setActionError('')
+  setActionLoading(true)
 
-  const result = data.naridhia
-    ? await approveRequest(id, 'ada', {
-        ...audit,
-        approved: true,
-        litresApproved: data.lita,
-        reason: data.sababu,
-        designation: data.cheo,
-      })
-    : await rejectRequest(id, 'ada', data.sababu)
+  try {
+    const result = data.naridhia
+      ? await approveRequest(id, 'ada', {
+          ...audit,
+          approved: true,
+          litresApproved: data.lita,
+          reason: data.sababu,
+          designation: data.cheo,
+        })
+      : await rejectRequest(id, 'ada', data.sababu)
 
-  if (result) {
-    await afterAction()
-  } else {
-    setActionError(
-      'Action failed. Please check the required fields and try again.'
-    )
+    if (result) {
+      setSuccessToast(data.naridhia ? 'Idhini ya ADA imetolewa kikamilifu!' : 'Ombi limekataliwa na ADA.')
+      await afterAction()
+    } else {
+      setActionError('Action failed. Please check the required fields and try again.')
+    }
+  } finally {
+    setActionLoading(false)
   }
 }
 
   const submitIssue = async (data: SectionEData) => {
     setActionError('')
-    const result = await issueFuel(id, {
-      fuelType: data.fuelType.toUpperCase(),
-      litresIssued: data.lita,
-      tokenNumber: data.tokenNumber,
-      designation: data.cheo,
-      auditAction: 'ISSUE_FUEL',
-      actionBy: user?.id,
-      actionRole: user?.role,
-      actionAt: new Date().toISOString(),
-    })
-    if (result) await afterAction()
-    else setActionError('Fuel issuance failed. Please check token number and designation.')
+    setActionLoading(true)
+
+    try {
+      const result = await issueFuel(id, {
+        fuelType: data.fuelType.toUpperCase(),
+        litresIssued: data.lita,
+        tokenNumber: data.tokenNumber,
+        designation: data.cheo,
+        auditAction: 'ISSUE_FUEL',
+        actionBy: user?.id,
+        actionRole: user?.role,
+        actionAt: new Date().toISOString(),
+      })
+      if (result) {
+        setSuccessToast('Mafuta yametolewa kikamilifu! Token number imehifadhiwa.')
+        await afterAction()
+      } else {
+        setActionError('Fuel issuance failed. Please check token number and designation.')
+      }
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const renderAction = () => {
@@ -275,19 +300,19 @@ const submitAda = async (data: SectionDData) => {
     if (!stage && role !== 'ununuzi-ugavi') return null
 
     if (role === 'mkuu-idara' && request.status === 'PENDING_HEAD_APPROVAL') {
-      return <SectionBForm onSubmit={submitHead} requestData={summary} initialData={{ jina: getUserDisplayName(user), cheo: user?.role || '' }} />
+      return <SectionBForm onSubmit={submitHead} loading={actionLoading} requestData={summary} initialData={{ jina: getUserDisplayName(user), cheo: user?.role || '' }} />
     }
 
     if (role === 'afisa-usafirishaji' && request.status === 'PENDING_TRANSPORT_APPROVAL') {
-      return <SectionCForm onSubmit={submitTransport} requestData={summary} initialData={{ cheo: user?.role || '' }} />
+      return <SectionCForm onSubmit={submitTransport} loading={actionLoading} requestData={summary} initialData={{ cheo: user?.role || '' }} />
     }
 
     if (role === 'ada-dahrm' && request.status === 'PENDING_DA_APPROVAL') {
-      return <SectionDForm onSubmit={submitAda} requestData={summary} initialData={{ cheo: user?.role || '' }} />
+      return <SectionDForm onSubmit={submitAda} loading={actionLoading} requestData={summary} initialData={{ cheo: user?.role || '' }} />
     }
 
     if (role === 'ununuzi-ugavi' && request.status === 'PENDING_FUEL_ISSUANCE') {
-      return <SectionEForm onSubmit={submitIssue} requestData={{ ...summary, requestNumber: request.requestNumber }} initialData={{ cheo: user?.role || '', jina: getUserDisplayName(user) }} />
+      return <SectionEForm onSubmit={submitIssue} loading={actionLoading} requestData={{ ...summary, requestNumber: request.requestNumber }} initialData={{ cheo: user?.role || '', jina: getUserDisplayName(user) }} />
     }
 
     return null
@@ -388,6 +413,25 @@ const submitAda = async (data: SectionDData) => {
           </div>
         </main>
       </div>
+
+      {/* Success Toast Popup */}
+      {successToast && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-success-200 dark:border-success-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success-100 dark:bg-success-900/30">
+              <CheckCircle className="h-8 w-8 text-success-600 dark:text-success-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Imekamilika!</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">{successToast}</p>
+            <button
+              onClick={() => setSuccessToast(null)}
+              className="btn-primary px-6 py-2.5 text-sm w-full"
+            >
+              Sawa
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

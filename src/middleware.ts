@@ -62,6 +62,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/settings')
 
   const isLoginRoute = pathname.startsWith('/login')
+  const isLandingPage = pathname === '/'
 
   // 1. Not logged in -> Redirect protected routes to login
   if (!token) {
@@ -88,8 +89,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // If user is logged in and tries to access /login, redirect to their dashboard
-  if (isLoginRoute) {
+  // If user is logged in and tries to access /login or landing page, redirect to their dashboard
+  if (isLoginRoute || isLandingPage) {
     const target = roleDashboardMap[userRole] || '/dashboard/mwombaji'
     return NextResponse.redirect(new URL(target, request.url))
   }
@@ -118,6 +119,7 @@ export function middleware(request: NextRequest) {
 // Only match dashboard, requests, notifications, profile, settings and login routes
 export const config = {
   matcher: [
+    '/',
     '/dashboard/:path*',
     '/requests/:path*',
     '/notifications/:path*',

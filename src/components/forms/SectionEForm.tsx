@@ -14,6 +14,7 @@ export interface SectionEData {
 
 interface SectionEFormProps {
   onSubmit: (data: SectionEData) => void
+  loading?: boolean
   requestData?: {
     applicant: string
     department: string
@@ -25,7 +26,7 @@ interface SectionEFormProps {
   initialData?: Partial<SectionEData>
 }
 
-export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFormProps) {
+export function SectionEForm({ onSubmit, loading, requestData, initialData }: SectionEFormProps) {
   const [formData, setFormData] = useState<SectionEData>({
     fuelType: initialData?.fuelType || (requestData?.fuelType as 'Diesel' | 'Petrol') || 'Diesel',
     lita: initialData?.lita || requestData?.litres || 0,
@@ -75,7 +76,9 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
         <div>
           <label className="input-label">Aina ya Mafuta</label>
           <div className="flex gap-2">
-            <button              type="button"
+            <button
+              type="button"
+              disabled={loading}
               onClick={() => setFormData({ ...formData, fuelType: 'Diesel' })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
                 formData.fuelType === 'Diesel'
@@ -87,6 +90,7 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
             </button>
             <button
               type="button"
+              disabled={loading}
               onClick={() => setFormData({ ...formData, fuelType: 'Petrol' })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
                 formData.fuelType === 'Petrol'
@@ -113,6 +117,7 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
               min="0"
               step="0.1"
               readOnly
+              disabled={loading}
             />
           </div>
         </div>
@@ -129,6 +134,7 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
               className="input-field pl-10"
               placeholder="Ingiza namba ya token"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -145,6 +151,7 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
               className="input-field pl-10"
               placeholder="Ingiza jina lako"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -161,6 +168,7 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
               className="input-field pl-10"
               placeholder="Ingiza cheo chako"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -176,6 +184,7 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
               onChange={(e) => setFormData({ ...formData, tarehe: e.target.value })}
               className="input-field pl-10"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -188,10 +197,17 @@ export function SectionEForm({ onSubmit, requestData, initialData }: SectionEFor
       <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
         <button
           type="submit"
-          className="btn-primary px-8 py-3 text-base flex items-center gap-2"
+          disabled={loading}
+          className="btn-primary px-8 py-3 text-base flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          <CheckCircle className="w-5 h-5" />
-          Toa Mafuta
+          {loading ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : (
+            <>
+              <CheckCircle className="w-5 h-5" />
+              Toa Mafuta
+            </>
+          )}
         </button>
       </div>
     </form>

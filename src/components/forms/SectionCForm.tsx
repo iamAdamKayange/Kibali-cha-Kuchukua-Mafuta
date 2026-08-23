@@ -15,6 +15,7 @@ export interface SectionCData {
 
 interface SectionCFormProps {
   onSubmit: (data: SectionCData) => void
+  loading?: boolean
   requestData?: {
     applicant: string
     department: string
@@ -25,7 +26,7 @@ interface SectionCFormProps {
   initialData?: Partial<SectionCData>
 }
 
-export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFormProps) {
+export function SectionCForm({ onSubmit, loading, requestData, initialData }: SectionCFormProps) {
   const [formData, setFormData] = useState<SectionCData>({
     apewe: initialData?.apewe ?? true,
     lita: initialData?.lita || requestData?.litres || 0,
@@ -77,6 +78,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
           <div className="flex gap-2">
             <button
               type="button"
+              disabled={loading}
               onClick={() => setFormData({ ...formData, apewe: true, sababu: '' })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
                 formData.apewe
@@ -89,6 +91,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
             </button>
             <button
               type="button"
+              disabled={loading}
               onClick={() => setFormData({ ...formData, apewe: false })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
                 !formData.apewe
@@ -116,7 +119,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
               min="0"
               step="0.1"
               readOnly
-              disabled={isRejected}
+              disabled={isRejected || loading}
             />
           </div>
         </div>
@@ -136,6 +139,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
               className="input-field pl-10 min-h-[80px]"
               placeholder={isRejected ? "Andika sababu ya kukataa..." : "Andika sababu (hiari)"}
               required={isRejected}
+              disabled={loading}
             />
           </div>
         </div>
@@ -152,6 +156,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
               className="input-field pl-10"
               placeholder="Ingiza logbook namba"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -168,6 +173,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
               className="input-field pl-10"
               placeholder="Ingiza to"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -184,6 +190,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
               className="input-field pl-10"
               placeholder="Ingiza cheo chako"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -199,6 +206,7 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
               onChange={(e) => setFormData({ ...formData, tarehe: e.target.value })}
               className="input-field pl-10"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -211,13 +219,16 @@ export function SectionCForm({ onSubmit, requestData, initialData }: SectionCFor
       <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
         <button
           type="submit"
-          className={`px-8 py-3 text-base rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 ${
+          disabled={loading}
+          className={`px-8 py-3 text-base rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-70 ${
             formData.apewe
               ? 'btn-success'
               : 'btn-danger'
           }`}
         >
-          {formData.apewe ? (
+          {loading ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : formData.apewe ? (
             <>
               <Fuel className="w-5 h-5" />
               Idhinisha

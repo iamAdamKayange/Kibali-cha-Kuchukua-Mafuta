@@ -14,6 +14,7 @@ export interface SectionBData {
 
 interface SectionBFormProps {
   onSubmit: (data: SectionBData) => void
+  loading?: boolean
   requestData?: {
     applicant: string
     department: string
@@ -24,7 +25,7 @@ interface SectionBFormProps {
   initialData?: Partial<SectionBData>
 }
 
-export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFormProps) {
+export function SectionBForm({ onSubmit, loading, requestData, initialData }: SectionBFormProps) {
   const [formData, setFormData] = useState<SectionBData>({
     idhini: initialData?.idhini || 'naridhia',
     sababu: initialData?.sababu || '',
@@ -74,6 +75,7 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
           <div className="flex gap-2">
             <button
               type="button"
+              disabled={loading}
               onClick={() => setFormData({ ...formData, idhini: 'naridhia', sababu: '' })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
                 formData.idhini === 'naridhia'
@@ -86,6 +88,7 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
             </button>
             <button
               type="button"
+              disabled={loading}
               onClick={() => setFormData({ ...formData, idhini: 'siridhii' })}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
                 formData.idhini === 'siridhii'
@@ -114,6 +117,7 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
               className="input-field pl-10 min-h-[80px]"
               placeholder={isRejected ? "Andika sababu ya kukataa..." : "Andika sababu (hiari)"}
               required={isRejected}
+              disabled={loading}
             />
           </div>
         </div>
@@ -146,6 +150,7 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
               className="input-field pl-10"
               placeholder="Ingiza cheo chako"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -161,6 +166,7 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
               onChange={(e) => setFormData({ ...formData, tarehe: e.target.value })}
               className="input-field pl-10"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -173,13 +179,16 @@ export function SectionBForm({ onSubmit, requestData, initialData }: SectionBFor
       <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
         <button
           type="submit"
-          className={`px-8 py-3 text-base rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 ${
+          disabled={loading}
+          className={`px-8 py-3 text-base rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-70 ${
             formData.idhini === 'naridhia'
               ? 'btn-success'
               : 'btn-danger'
           }`}
         >
-          {formData.idhini === 'naridhia' ? (
+          {loading ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : formData.idhini === 'naridhia' ? (
             <>
               <CheckCircle className="w-5 h-5" />
               Idhinisha

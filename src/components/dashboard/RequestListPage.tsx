@@ -3,8 +3,9 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Clock, FileText, Fuel, ListChecks, PlusCircle, Search, X } from 'lucide-react'
+import { Clock, FileText, Fuel, ListChecks, PlusCircle, Search, X, ArrowRight } from 'lucide-react'
 import { Sidebar } from '@/components/common/Sidebar'
+import { Footer } from '@/components/common/Footer'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { RequestCard } from '@/components/requests/RequestCard'
@@ -116,8 +117,20 @@ interface RequestListPageProps {
 export function RequestListPage({ role, mode }: RequestListPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [search, setSearch] = useState('')
+  const [selectedFilter, setSelectedFilter] = useState<{
+    title: string
+    requests: FuelRequest[]
+  } | null>(null)
   const { requests, loading, error, total, refetch } = useRequests({ autoFetch: true, limit: 50 })
   const copy = pageCopy[mode]
+
+  const getDepartmentName = (req: FuelRequest) => {
+    const dep = req.department
+    if (!dep) return 'N/A'
+    if (typeof dep === 'string') return dep
+    if (typeof dep === 'object' && 'name' in dep) return dep.name
+    return 'N/A'
+  }
 
   const filteredRequests = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
@@ -136,6 +149,22 @@ export function RequestListPage({ role, mode }: RequestListPageProps) {
     { label: 'Historia', value: requests.filter(isHistory).length, icon: ListChecks, color: 'text-success-500' },
     { label: 'Lita', value: requests.reduce((sum, request) => sum + requestLitres(request), 0), icon: Fuel, color: 'text-blue-500' },
   ]
+
+  const handleStatCardClick = (label: string) => {
+    let filtered = requests
+    if (label === 'Yanasubiri') {
+      filtered = requests.filter((request) => isPendingForRole(request, role))
+    } else if (label === 'Historia') {
+      filtered = requests.filter(isHistory)
+    } else if (label === 'Lita') {
+      filtered = requests.filter((request) => requestLitres(request) > 0)
+    }
+
+    setSelectedFilter({
+      title: label,
+      requests: filtered,
+    })
+  }
 
   return (
     <div className="flex h-screen bg-transparent">
@@ -171,7 +200,8 @@ export function RequestListPage({ role, mode }: RequestListPageProps) {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.06 }}
-                className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm"
+                onClick={() => handleStatCardClick(stat.label)}
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm cursor-pointer hover:border-primary-500/40 hover:shadow-md transition-all duration-200"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
@@ -242,8 +272,67 @@ export function RequestListPage({ role, mode }: RequestListPageProps) {
               </p>
             </div>
           )}
+
+          <Footer />
         </main>
       </div>
+
+      {/* Filter Modal Dialog */}
+      {selectedFilter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
+          >
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-950/20">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedFilter.title}</h3>
+              <button
+                onClick={() => setSelectedFilter(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-3 flex-1 bg-white dark:bg-slate-900">
+              {selectedFilter.requests.length > 0 ? (
+                selectedFilter.requests.map((req) => (
+                  <Link
+                    key={req.id}
+                    href={`/requests/${req.id}`}
+                    onClick={() => setSelectedFilter(null)}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950/40 hover:border-primary-500/40 transition-all duration-200 group"
+                  >
+                    <div>
+                      <p className="font-bold text-sm text-slate-950 dark:text-white group-hover:text-primary-500 transition-colors">
+                        {req.requestNumber}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {req.applicantName || 'Mwombaji'} &bull; {getDepartmentName(req)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 sm:mt-0">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {req.litres || req.requestedLitres || 0}L ({(req.fuelType || '').toLowerCase()})
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(req.createdAt).toLocaleDateString('sw-TZ')}
+                      </span>
+                      <span className="text-xs font-semibold text-primary-500 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                        Angalia <ArrowRight className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-sm">
+                  Hakuna maombi katika kundi hili kwa sasa.
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

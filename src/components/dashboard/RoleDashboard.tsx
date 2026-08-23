@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { AlertCircle, CheckCircle, Clock, FileText, Fuel, ListChecks, XCircle, ArrowRight, X, type LucideIcon } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, FileText, Fuel, ListChecks, XCircle, ArrowRight, X, Info, ChevronDown, type LucideIcon } from 'lucide-react'
 import { Footer } from '@/components/common/Footer'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
@@ -19,6 +19,8 @@ type RoleDashboardKey = Exclude<WorkflowRole, 'admin'>
 const copy: Record<RoleDashboardKey, {
   title: string
   subtitle: string
+  description: string
+  responsibilities: string[]
   pendingTitle: string
   actionLabel: string
   pendingHref: string
@@ -28,6 +30,13 @@ const copy: Record<RoleDashboardKey, {
   mwombaji: {
     title: 'Dashibodi ya Mwombaji/Dereva',
     subtitle: 'Omba mafuta na fuatilia maombi yako kutoka backend.',
+    description: 'Wewe ndiye mwanzishaji wa mchakato wa kupata mafuta. Jukumu lako ni kuwasilisha maombi sahihi na kufuatilia hali yake hadi mafuta yatoleewe.',
+    responsibilities: [
+      'Jaza fomu ya ombi la mafuta kwa usahihi — gari, kilomita, lita zinazohitajika, na madhumuni ya safari.',
+      'Fuatilia hali ya ombi lako kupitia mfumo hadi liidhinishwe au likataliwe.',
+      'Pokea mafuta baada ya ombi kupitishwa na hatua zote kukamilika.',
+      'Hakikisha taarifa za gari (kilomita, logbook) ni sahihi kabla ya kuomba.',
+    ],
     pendingTitle: 'Maombi yako ya hivi karibuni',
     actionLabel: 'Omba Mafuta',
     pendingHref: '/requests/new',
@@ -37,6 +46,13 @@ const copy: Record<RoleDashboardKey, {
   'mkuu-idara': {
     title: 'Dashibodi ya Mkuu wa Idara',
     subtitle: 'Kagua, idhinisha au kataa maombi ya idara yako.',
+    description: 'Wewe ni mhimili wa kwanza wa idhini. Jukumu lako ni kuhakikisha maombi ya mafuta kutoka idara yako ni halali na yanastahili kabla ya kupelekwa hatua inayofuata.',
+    responsibilities: [
+      'Kagua maombi ya mafuta yanayotoka kwa wafanyakazi wa idara yako.',
+      'Hakiki kuwa madhumuni ya safari na kiwango cha mafuta kinachoombwa ni sahihi.',
+      'Idhinisha maombi yanayostahili au kataa yenye sababu wazi.',
+      'Weka saini ya kidijitali na cheo chako kwenye idhini.',
+    ],
     pendingTitle: 'Maombi Yanayosubiri Idhini',
     actionLabel: 'Kagua Maombi',
     pendingHref: '/dashboard/mkuu-idara/pending',
@@ -46,6 +62,13 @@ const copy: Record<RoleDashboardKey, {
   'afisa-usafirishaji': {
     title: 'Dashibodi ya Afisa Usafirishaji',
     subtitle: 'Hakiki gari, logbook, kilomita na lita kabla ya kuamua.',
+    description: 'Wewe ni mtaalamu wa usafirishaji. Jukumu lako ni kuhakikisha taarifa za gari, logbook, na kilomita ni sahihi kabla ya kuidhinisha ombi.',
+    responsibilities: [
+      'Hakiki namba ya gari, hali ya gari, na logbook kabla ya kuidhinisha.',
+      'Thibitisha kilomita za kuanzia na za sasa zinaendana na matumizi halisi.',
+      'Amua kiwango cha lita kinachostahili kupewa kulingana na safari na gari.',
+      'Idhinisha au kataa ombi kwa sababu za kiufundi za usafirishaji.',
+    ],
     pendingTitle: 'Maombi Yanayosubiri Ukaguzi',
     actionLabel: 'Kagua Usafirishaji',
     pendingHref: '/dashboard/afisa-usafirishaji/pending',
@@ -55,6 +78,13 @@ const copy: Record<RoleDashboardKey, {
   'ada-dahrm': {
     title: 'Dashibodi ya ADA',
     subtitle: 'Toa idhini ya mwisho au kataa ombi lenye sababu.',
+    description: 'Wewe ni mamlaka ya mwisho ya kuidhinisha. Baada ya Mkuu wa Idara na Afisa Usafirishaji kuthibitisha, wewe unatoa idhini ya mwisho kabla ya mafuta kutolewa.',
+    responsibilities: [
+      'Kagua maombi yaliyopitishwa na Mkuu wa Idara na Afisa Usafirishaji.',
+      'Toa idhini ya mwisho kwa maombi yanayostahili.',
+      'Kataa maombi ambayo hayakidhi vigezo kwa sababu iliyo wazi na kumbukumbu.',
+      'Amua kiwango cha mwisho cha lita zinazopaswa kutolewa.',
+    ],
     pendingTitle: 'Maombi Yanayosubiri Idhini ya ADA',
     actionLabel: 'Kagua Maombi',
     pendingHref: '/dashboard/ada-dahrm/pending',
@@ -64,6 +94,13 @@ const copy: Record<RoleDashboardKey, {
   'ununuzi-ugavi': {
     title: 'Dashibodi ya Ununuzi na Ugavi',
     subtitle: 'Toa mafuta kwa maombi yaliyoidhinishwa na weka token number.',
+    description: 'Wewe ni mtendaji wa hatua ya mwisho. Baada ya idhini zote kukamilika, unatekeleza utoaji wa mafuta na kufunga ombi kwenye mfumo.',
+    responsibilities: [
+      'Toa mafuta kwa maombi yaliyopata idhini kamili ya ADA.',
+      'Weka token number ya mafuta kwenye mfumo kwa kumbukumbu.',
+      'Rekodi kiwango halisi cha lita zilizotolewa.',
+      'Funga ombi kwenye mfumo baada ya mafuta kutolewa.',
+    ],
     pendingTitle: 'Maombi Yaliyo Tayari Kutolewa Mafuta',
     actionLabel: 'Toa Mafuta',
     pendingHref: '/dashboard/ununuzi-ugavi/pending',
@@ -101,6 +138,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     title: string
     requests: FuelRequest[]
   } | null>(null)
+  const [roleDetailsOpen, setRoleDetailsOpen] = useState(false)
 
   const getDepartmentName = (req: FuelRequest) => {
     const dep = req.department
@@ -162,6 +200,52 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
               {page.actionLabel}
             </Link>
           </div>
+
+          {/* Role Details Expandable Card */}
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 rounded-2xl border border-primary-200/60 bg-primary-50/50 dark:border-primary-900/40 dark:bg-primary-900/10 overflow-hidden"
+          >
+            <button
+              onClick={() => setRoleDetailsOpen(!roleDetailsOpen)}
+              className="w-full flex items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-primary-100/40 dark:hover:bg-primary-900/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/40">
+                  <Info className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Maelezo ya Jukumu Lako</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{page.subtitle}</p>
+                </div>
+              </div>
+              <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${roleDetailsOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {roleDetailsOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="border-t border-primary-200/40 dark:border-primary-900/30 px-4 pb-4 pt-3"
+              >
+                <p className="mb-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {page.description}
+                </p>
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400">
+                  Majukumu Yako
+                </h4>
+                <ul className="space-y-1.5">
+                  {page.responsibilities.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary-500" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+          </motion.section>
 
           <WorkflowGuide currentRole={role} />
 
