@@ -13,6 +13,7 @@ import { getCookie, setCookie, deleteCookie } from '@/lib/cookies'
 import {
   registerDevicePushToken,
   unregisterDevicePushToken,
+  canReceivePushNotifications,
 } from '@/lib/pushNotifications'
 
 export interface User {
@@ -202,8 +203,13 @@ export function AuthProvider({
       return
     }
 
-    void registerDevicePushToken()
-  }, [loading, user?.id])
+    if (!canReceivePushNotifications(user.role)) {
+      void unregisterDevicePushToken()
+      return
+    }
+
+    void registerDevicePushToken(user.role)
+  }, [loading, user?.id, user?.role])
 
   /**
    * LOGIN

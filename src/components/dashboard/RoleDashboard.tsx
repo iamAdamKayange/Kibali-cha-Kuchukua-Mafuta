@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Sidebar } from '@/components/common/Sidebar'
 import { RequestCard } from '@/components/requests/RequestCard'
 import { getUserDisplayName, useAuth } from '@/contexts/AuthContext'
+import { formatTanzaniaDate, toTanzaniaIsoString } from '@/lib/dates'
 import { useRequests } from '@/hooks/useRequests'
 import type { FuelRequest } from '@/types'
 import { WorkflowGuide, type WorkflowRole } from './WorkflowGuide'
@@ -32,7 +33,7 @@ const copy: Record<RoleDashboardKey, {
     subtitle: 'Omba mafuta na fuatilia maombi yako kutoka backend.',
     description: 'Wewe ndiye mwanzishaji wa mchakato wa kupata mafuta. Jukumu lako ni kuwasilisha maombi sahihi na kufuatilia hali yake hadi mafuta yatoleewe.',
     responsibilities: [
-      'Jaza fomu ya ombi la mafuta kwa usahihi — gari, kilomita, lita zinazohitajika, na madhumuni ya safari.',
+      'Jaza fomu ya ombi la mafuta kwa usahihi &mdash; gari, kilomita, lita zinazohitajika, na madhumuni ya safari.',
       'Fuatilia hali ya ombi lako kupitia mfumo hadi liidhinishwe au likataliwe.',
       'Pokea mafuta baada ya ombi kupitishwa na hatua zote kukamilika.',
       'Hakikisha taarifa za gari (kilomita, logbook) ni sahihi kabla ya kuomba.',
@@ -341,7 +342,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
                         {req.requestNumber}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {req.applicantName || (req as any).applicant || 'Mwombaji'} • {getDepartmentName(req)}
+                        {req.applicantName || (req as any).applicant || 'Mwombaji'} &bull; {getDepartmentName(req)}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 mt-2 sm:mt-0">
@@ -349,7 +350,9 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
                         {req.litres || (req as any).requestedLitres || 0}L ({(req.fuelType || '').toLowerCase()})
                       </span>
                       <span className="text-xs text-slate-400">
-                        {new Date(req.createdAt || (req as any).date).toLocaleDateString('sw-TZ')}
+                        <time dateTime={toTanzaniaIsoString(req.createdAt || (req as any).date)}>
+                          {formatTanzaniaDate(req.createdAt || (req as any).date)}
+                        </time>
                       </span>
                       <span className="text-xs font-semibold text-primary-500 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                         Angalia <ArrowRight className="h-3 w-3" />
@@ -369,3 +372,4 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     </div>
   )
 }
+

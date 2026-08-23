@@ -11,7 +11,8 @@ import { LanguageToggle } from '@/components/i18n/LanguageToggle'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { api } from '@/lib/api'
-import { onForegroundMessage } from '@/lib/pushNotifications'
+import { formatTanzaniaDateTime } from '@/lib/dates'
+import { canReceivePushNotifications, onForegroundMessage } from '@/lib/pushNotifications'
 
 interface HeaderProps {
   toggleSidebar: () => void
@@ -55,6 +56,8 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
       delete dismissTimers.current[id]
     }
   }
+
+  const canUsePushNotifications = canReceivePushNotifications(authUser?.role)
 
   const playNotificationSound = () => {
     if (typeof window === 'undefined') return
@@ -104,7 +107,13 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
       return [notification, ...current].slice(0, 3)
     })
 
-    playNotificationSound()
+    if (canUsePushNotifications) {
+      if (navigator.vibrate) {
+        navigator.vibrate([120, 80, 160])
+      }
+
+      playNotificationSound()
+    }
 
     if (dismissTimers.current[notification.id]) {
       window.clearTimeout(dismissTimers.current[notification.id])
@@ -118,6 +127,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
   const showDeviceNotification = (notification: HeaderNotification) => {
     if (typeof window === 'undefined') return
     if (localStorage.getItem('notifications-enabled') === 'false') return
+    if (!canUsePushNotifications) return
     if (!('Notification' in window)) return
     if (Notification.permission !== 'granted') return
 
@@ -204,7 +214,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
         })
       }
     }
-  }, [authUser?.id])
+  }, [authUser?.id, authUser?.role])
 
   useEffect(() => {
     return () => {
@@ -265,12 +275,9 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
 
           <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
-              {new Date().toLocaleDateString(language === 'sw' ? 'sw-TZ' : 'en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+              <time dateTime={new Date().toISOString()}>
+                {formatTanzaniaDateTime(new Date(), language === 'sw' ? 'sw-TZ' : 'en-US')}
+              </time>
             </span>
           </div>
         </div>
@@ -300,7 +307,8 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                   typeof window !== 'undefined' &&
                   'Notification' in window &&
                   Notification.permission === 'default' &&
-                  localStorage.getItem('notifications-enabled') !== 'false'
+                  localStorage.getItem('notifications-enabled') !== 'false' &&
+                  canUsePushNotifications
                 ) {
                   await Notification.requestPermission()
                 }
@@ -357,7 +365,9 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
                             <p className="text-sm text-gray-900 dark:text-white">{notif.title}</p>
                             <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{notif.message}</p>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              {new Date(notif.createdAt).toLocaleString(language === 'sw' ? 'sw-TZ' : 'en-US')}
+                              <time dateTime={notif.createdAt}>
+                                {formatTanzaniaDateTime(notif.createdAt, language === 'sw' ? 'sw-TZ' : 'en-US')}
+                              </time>
                             </p>
                           </div>
                           <button

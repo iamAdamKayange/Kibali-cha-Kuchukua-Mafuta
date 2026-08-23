@@ -8,6 +8,7 @@ import { LanguageToggle } from '@/components/i18n/LanguageToggle'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { getUserDisplayName, roleToDashboard, useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { canReceivePushNotifications } from '@/lib/pushNotifications'
 import Link from 'next/link'
 import { ArrowLeft, Bell, Languages, Moon, User } from 'lucide-react'
 
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const { t } = useLanguage()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const pushNotificationsAllowed = canReceivePushNotifications(user?.role)
 
   useEffect(() => {
     const stored = localStorage.getItem('notifications-enabled')
@@ -89,12 +91,24 @@ export default function SettingsPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings_notifications_desc')}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setNotifications(!notificationsEnabled)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium ${notificationsEnabled ? 'bg-success-500 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200'}`}
-                >
-                  {notificationsEnabled ? 'On' : 'Off'}
-                </button>
+                <div className="flex flex-col items-end gap-2">
+                  <button
+                    onClick={() => setNotifications(!notificationsEnabled)}
+                    disabled={!pushNotificationsAllowed}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                      notificationsEnabled
+                        ? 'bg-success-500 text-white'
+                        : 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                    } ${!pushNotificationsAllowed ? 'cursor-not-allowed opacity-50' : ''}`}
+                  >
+                    {notificationsEnabled ? 'On' : 'Off'}
+                  </button>
+                  {!pushNotificationsAllowed && (
+                    <p className="text-right text-xs text-gray-400 dark:text-gray-500">
+                      Arifa za push hazijawezeshwa kwa role yako.
+                    </p>
+                  )}
+                </div>
               </div>
 
               <Link href="/profile" className="glass-card rounded-2xl p-5 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-900/70">

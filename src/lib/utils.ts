@@ -1,12 +1,13 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { formatTanzaniaDate } from '@/lib/dates'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export function formatDate(date: string | Date) {
-  return new Date(date).toLocaleDateString('sw-TZ', {
+  return formatTanzaniaDate(date, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -15,10 +16,11 @@ export function formatDate(date: string | Date) {
 }
 
 export function formatTime(date: string | Date) {
-  return new Date(date).toLocaleTimeString('sw-TZ', {
+  return new Intl.DateTimeFormat('sw-TZ', {
+    timeZone: 'Africa/Dar_es_Salaam',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  }).format(new Date(date))
 }
 
 export function formatDateTime(date: string | Date) {

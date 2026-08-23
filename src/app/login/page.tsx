@@ -1,6 +1,7 @@
-'use client'
+﻿'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import {
@@ -64,7 +65,7 @@ export default function LoginPage() {
     <div className="relative min-h-screen overflow-hidden bg-transparent p-4 text-gray-900 transition-colors duration-300 dark:text-white">
       {/*
         The national-emblem watermark itself now lives in <BrandWatermark />,
-        rendered once (globally) by AppExperience — the same layer that
+        rendered once (globally) by AppExperience &mdash; the same layer that
         sits behind every other screen. Previously this page painted its
         own extra copy on top with an unconditional `mix-blend-screen`,
         which is why it looked fine here but (a) doubled up oddly on this
@@ -197,7 +198,7 @@ export default function LoginPage() {
                     setPassword(e.target.value)
                   }
                   className="input-field pl-10 pr-12"
-                  placeholder="••••••••"
+                  placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
                   autoComplete="current-password"
                   required
                 />
@@ -263,6 +264,13 @@ export default function LoginPage() {
               Msimamizi
             </p>
 
+            <Link
+              href="/install"
+              className="mt-4 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 transition hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-300 dark:hover:bg-teal-900/30"
+            >
+              Install kwenye simu
+            </Link>
+
           </div>
 
         </div>
@@ -271,7 +279,7 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
 
           <p className="text-xs text-slate-300">
-            © 2026 Wizara ya Habari,
+            &copy; 2026 Wizara ya Habari,
             Utamaduni, Sanaa na Michezo
           </p>
 
@@ -283,3 +291,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/common/StatusBadge'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { FuelRequest } from '@/types'
+import { formatTanzaniaDate } from '@/lib/dates'
 
 interface MockRequest {
   id: string
@@ -179,7 +180,7 @@ export function RequestCard({
           return 'N/A'
         }
 
-        return new Date(value).toLocaleDateString('sw-TZ')
+        return formatTanzaniaDate(value)
       }
 
       return req.date || 'N/A'
@@ -262,9 +263,7 @@ export function RequestCard({
             {applicantName}
           </span>
 
-          <span className="text-gray-300 dark:text-gray-600">
-            •
-          </span>
+          <span className="text-gray-300 dark:text-gray-600">&bull;</span>
 
           <Building className="w-4 h-4 text-gray-400 shrink-0" />
 
@@ -283,9 +282,7 @@ export function RequestCard({
             {request.vehicleNumber || 'N/A'}
           </span>
 
-          <span className="text-gray-300 dark:text-gray-600">
-            •
-          </span>
+          <span className="text-gray-300 dark:text-gray-600">&bull;</span>
 
           <span className="capitalize">
             {fuelType}

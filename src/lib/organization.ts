@@ -1,5 +1,16 @@
 export type OrganizationCategory = 'IDARA' | 'KITENGO'
 
+export const OFFICIAL_ORGANIZATION_ADDRESS = {
+  country: 'The United Republic of Tanzania',
+  officer: 'Katibu Mkuu',
+  ministry: 'WIZARA YA HABARI, UTAMADUNI, SANAA NA MICHEZO',
+  postal: 'P.O. Box 25, Dodoma, Tanzania',
+  city: 'Mji wa Serikali Mtumba',
+  email: 'km@michezo.go.tz',
+  telephone: 'Telephone: +255 26 2322 129',
+  fax: 'Nukushi: +255 26 2322 128',
+}
+
 export const ORGANIZATION_CATEGORIES: Array<{
   value: OrganizationCategory
   label: string
@@ -56,4 +67,3 @@ export function inferCategoryFromDepartmentName(name?: string | null) {
 
   return ''
 }
-

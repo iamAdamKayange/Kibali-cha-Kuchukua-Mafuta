@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -10,6 +10,7 @@ import { Header } from '@/components/common/Header'
 import { Sidebar } from '@/components/common/Sidebar'
 import { WorkflowGuide } from '@/components/dashboard/WorkflowGuide'
 import { getUserDisplayName, useAuth } from '@/contexts/AuthContext'
+import { formatTanzaniaDate, toTanzaniaIsoString } from '@/lib/dates'
 import { api } from '@/lib/api'
 import type { FuelRequest, User } from '@/types'
 
@@ -205,7 +206,11 @@ export default function AdminDashboard() {
                       <p className="font-bold text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors">{request.requestNumber}</p>
                       <p className="text-gray-500 dark:text-gray-400">{request.applicantName || request.driver?.firstName || 'Mwombaji'} - {request.status}</p>
                     </div>
-                    <span className="text-xs text-gray-400">{new Date(request.createdAt).toLocaleDateString('sw-TZ')}</span>
+                    <span className="text-xs text-gray-400">
+                      <time dateTime={toTanzaniaIsoString(request.createdAt)}>
+                        {formatTanzaniaDate(request.createdAt)}
+                      </time>
+                    </span>
                   </Link>
                 )) : (
                   <p className="text-sm text-gray-500 dark:text-gray-400">Hakuna activity ya maombi bado.</p>
@@ -280,7 +285,7 @@ export default function AdminDashboard() {
                         {req.requestNumber}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {req.applicantName || 'Mwombaji'} • {getDepartmentName(req)}
+                        {req.applicantName || 'Mwombaji'} &bull; {getDepartmentName(req)}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 mt-2 sm:mt-0">
@@ -288,7 +293,9 @@ export default function AdminDashboard() {
                         {req.litres || req.requestedLitres || 0}L ({(req.fuelType || '').toLowerCase()})
                       </span>
                       <span className="text-xs text-slate-400">
-                        {new Date(req.createdAt).toLocaleDateString('sw-TZ')}
+                        <time dateTime={toTanzaniaIsoString(req.createdAt)}>
+                          {formatTanzaniaDate(req.createdAt)}
+                        </time>
                       </span>
                       <span className="text-xs font-semibold text-primary-500 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                         Angalia <ArrowRight className="h-3 w-3" />
@@ -308,3 +315,4 @@ export default function AdminDashboard() {
     </div>
   )
 }
+

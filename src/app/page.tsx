@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -39,6 +39,7 @@ const dict = {
     navContact: 'Mawasiliano',
     ctaLogin: 'Ingia',
     ctaLoginFull: 'Ingia kwenye Mfumo',
+    ctaInstall: 'Sakinisha App',
     ctaLearnMore: 'Jifunze Zaidi',
     heroTagline: 'Mfumo wa vibali vya mafuta wa kidigitali',
     heroTitle: 'Kibali cha Kuchukua Mafuta',
@@ -74,7 +75,7 @@ const dict = {
     step4Desc: 'Idara ya Ununuzi na Ugavi inatoa mafuta na kufunga ombi kupitia mfumo ikiwa na kumbukumbu kamili.',
     contactTitle: 'Mawasiliano na Msaada',
     contactSubtitle: 'Tuko hapa kukusaidia saa 24/7 kwa maswali au changamoto ya kiufundi',
-    address: 'Wizara ya Habari, Mawasiliano na Teknolojia ya Habari, Mji wa Serikali Mtumba, S.L.P 2833, Dodoma, Tanzania.',
+    address: 'The United Republic of Tanzania. Katibu Mkuu, WIZARA YA HABARI, UTAMADUNI, SANAA NA MICHEZO, P.O. Box 25, Dodoma, Tanzania, Mji wa Serikali Mtumba.',
     phone: 'Simu: +255 (0) 26 2961800',
     email: 'Barua Pepe: support@mafuta.go.tz',
     copyright: 'Jamhuri ya Muungano wa Tanzania. Haki zote zimehifadhiwa.'
@@ -88,6 +89,7 @@ const dict = {
     navContact: 'Contact',
     ctaLogin: 'Login',
     ctaLoginFull: 'Login to System',
+    ctaInstall: 'Install App',
     ctaLearnMore: 'Learn More',
     heroTagline: 'Digital fuel permit workflow system',
     heroTitle: 'Fuel Permit Management',
@@ -123,7 +125,7 @@ const dict = {
     step4Desc: 'Procurement and Supplies department issues the fuel and closes the request on the system with full logs.',
     contactTitle: 'Contact & Support',
     contactSubtitle: 'We are here to support you 24/7 for any enquiries or technical difficulties',
-    address: 'Ministry of Information, Communication and Information Technology, Government City Mtumba, P.O. Box 2833, Dodoma, Tanzania.',
+    address: 'The United Republic of Tanzania. Secretary General, Ministry of Information, Culture, Arts and Sports, P.O. Box 25, Dodoma, Tanzania, Government City Mtumba.',
     phone: 'Phone: +255 (0) 26 2961800',
     email: 'Email: support@mafuta.go.tz',
     copyright: 'United Republic of Tanzania. All Rights Reserved.'
@@ -324,6 +326,14 @@ export default function HomePage() {
               >
                 {t.ctaLoginFull}
               </Link>
+              <Link
+                href="/install"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-teal-200 bg-white font-bold text-teal-700 transition hover:bg-teal-50 dark:border-teal-900/50 dark:bg-slate-950 dark:text-teal-300 dark:hover:bg-slate-900"
+              >
+                <Smartphone className="h-4 w-4" />
+                {t.ctaInstall}
+              </Link>
             </motion.div>
           )}
         </AnimatePresence>
@@ -360,7 +370,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-              “{t.heroSubtitle}”
+              â€œ{t.heroSubtitle}â€
             </p>
 
             {/* CTAs */}
@@ -371,6 +381,13 @@ export default function HomePage() {
               >
                 <span>{t.ctaLoginFull}</span>
                 <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link
+                href="/install"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-teal-200 bg-white/70 px-8 py-4 font-bold text-teal-700 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white dark:border-teal-900/50 dark:bg-slate-900/60 dark:text-teal-300 dark:hover:bg-slate-800/80"
+              >
+                <Smartphone className="h-5 w-5" />
+                <span>{t.ctaInstall}</span>
               </Link>
               <Link
                 href="#about"
@@ -697,10 +714,10 @@ export default function HomePage() {
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
                   <Building2 className="h-6 w-6 text-teal-300" />
                 </div>
-                <h3 className="text-xl font-bold">Wizara ya Habari, Mawasiliano na Teknolojia ya Habari</h3>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  Mfumo huu umebuniwa na kusimamiwa na Serikali ya Jamhuri ya Muungano wa Tanzania kupitia Idara ya Teknolojia ya Habari ili kuongeza uwazi na kupunguza upotevu wa mafuta.
-                </p>
+              <h3 className="text-xl font-bold">The United Republic of Tanzania</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                  Katibu Mkuu, WIZARA YA HABARI, UTAMADUNI, SANAA NA MICHEZO, P.O. Box 25, Dodoma, Tanzania, Mji wa Serikali Mtumba.
+              </p>
               </div>
 
               {/* Tanzanian Emblem as watermarked background visual */}
@@ -772,23 +789,12 @@ export default function HomePage() {
             </ul>
           </div>
 
-          {/* Column 3: Msaada / Support */}
+          {/* Column 3: Official address */}
           <div className="space-y-4">
-            <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">{isSw ? 'Msaada' : 'Support'}</h4>
-            <ul className="space-y-2 text-xs">
-              <li className="flex items-center gap-2">
-                <Phone className="h-3.5 w-3.5 text-teal-600 dark:text-teal-500" />
-                <span>+255 (0) 26 2961800</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-teal-600 dark:text-teal-500" />
-                <span>support@mafuta.go.tz</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="h-3.5 w-3.5 text-teal-600 dark:text-teal-500 shrink-0 mt-0.5" />
-                <span className="leading-tight">Dodoma, Tanzania</span>
-              </li>
-            </ul>
+            <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">{isSw ? 'Anwani Rasmi' : 'Official Address'}</h4>
+            <p className="text-xs leading-6 text-slate-600 dark:text-slate-400">
+              {t.address}
+            </p>
           </div>
 
           {/* Column 4: Vyeti / Badges */}
@@ -810,10 +816,11 @@ export default function HomePage() {
 
         {/* Legal & Copyright */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-200 dark:border-slate-900 text-center text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} {t.copyright}</p>
+          <p>&copy; {new Date().getFullYear()} {t.copyright}</p>
         </div>
       </footer>
 
     </main>
   )
 }
+

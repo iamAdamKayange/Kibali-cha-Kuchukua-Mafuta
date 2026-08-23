@@ -71,7 +71,11 @@ export function PWAInstallPrompt() {
     }
   }, [])
 
-  const shouldShow = pathname?.startsWith('/dashboard') && !installed && !dismissed && (installEvent || isIosDevice())
+  const shouldShow =
+    pathname !== '/install' &&
+    !installed &&
+    !dismissed &&
+    (installEvent || isIosDevice())
 
   if (!shouldShow) return null
 

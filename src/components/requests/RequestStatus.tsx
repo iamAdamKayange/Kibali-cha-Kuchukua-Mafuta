@@ -13,6 +13,7 @@ import {
   Calendar,
   ArrowRight
 } from 'lucide-react'
+import { formatTanzaniaDate } from '@/lib/dates'
 
 interface RequestStatusProps {
   requestNumber: string
@@ -126,7 +127,9 @@ export function RequestStatus({
         <div className="text-right">
           <p className="text-sm text-gray-500 dark:text-gray-400">Tarehe</p>
           <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {new Date(date).toLocaleDateString('sw-TZ')}
+            <time dateTime={date}>
+              {formatTanzaniaDate(date)}
+            </time>
           </p>
         </div>
       </div>

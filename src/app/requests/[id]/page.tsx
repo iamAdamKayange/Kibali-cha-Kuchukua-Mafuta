@@ -14,6 +14,7 @@ import { SectionDForm, type SectionDData } from '@/components/forms/SectionDForm
 import { SectionEForm, type SectionEData } from '@/components/forms/SectionEForm'
 import { RequestTimeline } from '@/components/requests/RequestTimeline'
 import { getUserDisplayName, roleToDashboard, useAuth } from '@/contexts/AuthContext'
+import { formatTanzaniaDateTime, formatTanzaniaDate } from '@/lib/dates'
 import { useRequests } from '@/hooks/useRequests'
 import type { FuelRequest } from '@/types'
 
@@ -104,12 +105,12 @@ function timeline(request: DetailRequest) {
 
   return labels.map((item, index) => {
     if (item.key === 'submitted') {
-      return {
-        label: item.label,
-        status: 'completed' as const,
-        user: applicantName(request),
-        date: new Date(request.createdAt).toLocaleString('sw-TZ'),
-      }
+        return {
+          label: item.label,
+          status: 'completed' as const,
+          user: applicantName(request),
+          date: formatTanzaniaDateTime(request.createdAt),
+        }
     }
 
     const approval = request.approvals?.find((entry) => entry.stage?.toLowerCase().includes(item.key))
@@ -118,7 +119,7 @@ function timeline(request: DetailRequest) {
         label: item.label,
         status: approval.approved ? 'completed' as const : 'rejected' as const,
         user: [approval.approver?.firstName, approval.approver?.lastName].filter(Boolean).join(' ') || approval.approver?.email,
-        date: approval.approvedAt ? new Date(approval.approvedAt).toLocaleString('sw-TZ') : undefined,
+        date: approval.approvedAt ? formatTanzaniaDateTime(approval.approvedAt) : undefined,
         reason: approval.reason || undefined,
       }
     }
@@ -358,7 +359,7 @@ const submitAda = async (data: SectionDData) => {
                         { label: 'Gari Number', value: summary.vehicleNumber, icon: Car },
                         { label: 'Mafuta', value: `${summary.fuelType} - ${summary.litres}L`, icon: Fuel },
                         { label: 'GPSA', value: request.gpsa || request.vehicle?.gpsa || 'N/A', icon: MapPin },
-                        { label: 'Tarehe', value: new Date(request.createdAt).toLocaleDateString('sw-TZ'), icon: Calendar },
+                        { label: 'Tarehe', value: formatTanzaniaDate(request.createdAt), icon: Calendar },
                       ].map((item) => (
                         <div key={item.label}>
                           <p className="text-sm text-gray-500 dark:text-gray-400">{item.label}</p>

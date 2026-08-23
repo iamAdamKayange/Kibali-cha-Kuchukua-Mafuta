@@ -11,6 +11,7 @@ import { Toast } from '@/components/common/Toast'
 import { getUserDisplayName, roleToDashboard, useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { api } from '@/lib/api'
+import { formatTanzaniaDateTime } from '@/lib/dates'
 import { motion } from 'framer-motion'
 
 interface AppNotification {
@@ -69,7 +70,11 @@ function SwipeNotification({
             <div>
               <h2 className="font-semibold text-gray-900 dark:text-white">{notification.title}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">{notification.message}</p>
-              <p className="mt-2 text-xs text-gray-400">{new Date(notification.createdAt).toLocaleString(language === 'sw' ? 'sw-TZ' : 'en-US')}</p>
+              <p className="mt-2 text-xs text-gray-400">
+                <time dateTime={notification.createdAt}>
+                  {formatTanzaniaDateTime(notification.createdAt, language === 'sw' ? 'sw-TZ' : 'en-US')}
+                </time>
+              </p>
             </div>
           </div>
           <button

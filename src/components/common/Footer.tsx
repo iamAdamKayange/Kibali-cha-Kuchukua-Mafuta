@@ -1,5 +1,6 @@
-import Image from 'next/image'
+﻿import Image from 'next/image'
 import { Mail, Phone, Printer, MapPin } from 'lucide-react'
+import { OFFICIAL_ORGANIZATION_ADDRESS } from '@/lib/organization'
 
 export function Footer() {
   const year = new Date().getFullYear()
@@ -21,31 +22,31 @@ export function Footer() {
         {/* Contact details */}
         <div className="flex-1 space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            The United Republic of Tanzania
+            {OFFICIAL_ORGANIZATION_ADDRESS.country}
           </p>
           <p className="text-sm font-bold text-gray-900 dark:text-white">
-            Katibu Mkuu
+            {OFFICIAL_ORGANIZATION_ADDRESS.officer}
           </p>
           <p className="text-sm font-semibold text-primary-600 dark:text-primary-400">
-            WIZARA YA HABARI, UTAMADUNI, SANAA NA MICHEZO
+            {OFFICIAL_ORGANIZATION_ADDRESS.ministry}
           </p>
 
           <div className="flex flex-col gap-1 pt-1 text-xs text-gray-600 dark:text-gray-400">
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-              P.O. Box 25, Dodoma, Tanzania &mdash; Mji wa Serikali Mtumba
+              {OFFICIAL_ORGANIZATION_ADDRESS.postal}, {OFFICIAL_ORGANIZATION_ADDRESS.city}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-              km@michezo.go.tz
+              {OFFICIAL_ORGANIZATION_ADDRESS.email}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-              Telephone: +255 26 2322 129
+              {OFFICIAL_ORGANIZATION_ADDRESS.telephone}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Printer className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-              Nukushi: +255 26 2322 128
+              {OFFICIAL_ORGANIZATION_ADDRESS.fax}
             </span>
           </div>
         </div>
@@ -54,9 +55,10 @@ export function Footer() {
       {/* Copyright */}
       <div className="mt-4 border-t border-gray-200 pt-3 dark:border-gray-800">
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          © {year} Jamhuri ya Muungano wa Tanzania. Haki zote zimehifadhiwa.
+          &copy; {year} Jamhuri ya Muungano wa Tanzania. Haki zote zimehifadhiwa.
         </p>
       </div>
     </footer>
   )
 }
+

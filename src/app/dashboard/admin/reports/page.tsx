@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import {
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { formatTanzaniaDate, toTanzaniaIsoString } from '@/lib/dates'
 
 import { Sidebar } from '@/components/common/Sidebar'
 import { Header } from '@/components/common/Header'
@@ -349,7 +350,7 @@ export default function AdminReportsPage() {
                         {req.requestNumber}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {req.applicantName || (req as any).applicant || 'Mwombaji'} • {getDepartmentName(req)}
+                        {req.applicantName || (req as any).applicant || 'Mwombaji'} &bull; {getDepartmentName(req)}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 mt-2 sm:mt-0">
@@ -357,7 +358,9 @@ export default function AdminReportsPage() {
                         {req.litres || (req as any).requestedLitres || 0}L ({(req.fuelType || '').toLowerCase()})
                       </span>
                       <span className="text-xs text-slate-400">
-                        {new Date(req.createdAt || (req as any).date).toLocaleDateString('sw-TZ')}
+                        <time dateTime={toTanzaniaIsoString(req.createdAt || (req as any).date)}>
+                          {formatTanzaniaDate(req.createdAt || (req as any).date)}
+                        </time>
                       </span>
                       <span className="text-xs font-semibold text-primary-500 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                         Angalia <ArrowRight className="h-3 w-3" />
@@ -377,3 +380,4 @@ export default function AdminReportsPage() {
     </div>
   )
 }
+

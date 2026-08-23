@@ -3,6 +3,19 @@ import { api } from '@/lib/api'
 import { firebaseVapidKey, getFirebaseApp, hasFirebaseMessagingConfig } from '@/lib/firebase'
 
 const DEVICE_TOKEN_KEY = 'deviceToken'
+const PUSH_ENABLED_ROLES = new Set([
+  'ADMIN',
+  'DRIVER',
+  'MWOMBAJI',
+  'HEAD_OF_DEPARTMENT',
+  'TRANSPORT_OFFICER',
+  'ADA_DAHRM',
+  'PROCUREMENT',
+])
+
+export function canReceivePushNotifications(role?: string) {
+  return PUSH_ENABLED_ROLES.has(String(role || '').trim().toUpperCase())
+}
 
 function getDeviceType() {
   if (typeof navigator === 'undefined') return 'unknown'
@@ -46,8 +59,12 @@ async function ensurePermission() {
   return Notification.permission
 }
 
-export async function registerDevicePushToken() {
+export async function registerDevicePushToken(role?: string) {
   if (typeof window === 'undefined') {
+    return null
+  }
+
+  if (!canReceivePushNotifications(role)) {
     return null
   }
 
@@ -169,5 +186,4 @@ export async function onForegroundMessage(callback: (payload: any) => void) {
     return null
   }
 }
-
 

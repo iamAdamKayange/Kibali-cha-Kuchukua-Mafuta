@@ -131,11 +131,12 @@ async function syncOfflineRequests() {
         await deleteOfflineRequest(req.id)
 
         // Alert user of background upload completion
-        await sw.registration.showNotification('Ombi la Mafuta Limewasilishwa', {
-          body: 'Ombi lako la mafuta lililokuwa limehifadhiwa nje ya mtandao sasa limetumwa kwa ufanisi!',
-          icon: '/icon-192.png',
-          badge: '/icon-192.png',
-        })
+    await sw.registration.showNotification('Ombi la Mafuta Limewasilishwa', {
+      body: 'Ombi lako la mafuta lililokuwa limehifadhiwa nje ya mtandao sasa limetumwa kwa ufanisi!',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      vibrate: [120, 80, 160],
+    } as NotificationOptions)
       }
     }
   } catch (error) {
@@ -190,10 +191,11 @@ if (hasConfig) {
       body,
       icon: '/icon-192.png',
       badge: '/icon-192.png',
+      vibrate: [120, 80, 160],
       data: {
         url: targetUrl,
       },
-    })
+    } as NotificationOptions)
   })
 
   sw.addEventListener('notificationclick', (event: any) => {
@@ -255,7 +257,8 @@ sw.addEventListener('push', (event: any) => {
         body: text,
         icon: '/icon-192.png',
         badge: '/icon-192.png',
-      })
+        vibrate: [120, 80, 160],
+      } as NotificationOptions)
     )
   }
 })

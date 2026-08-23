@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -10,6 +10,7 @@ import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { RequestCard } from '@/components/requests/RequestCard'
 import { useRequests } from '@/hooks/useRequests'
+import { formatTanzaniaDate, toTanzaniaIsoString } from '@/lib/dates'
 import type { FuelRequest } from '@/types'
 
 type DashboardRole = 'mwombaji' | 'mkuu-idara' | 'afisa-usafirishaji' | 'ada-dahrm' | 'ununuzi-ugavi'
@@ -316,7 +317,9 @@ export function RequestListPage({ role, mode }: RequestListPageProps) {
                         {req.litres || req.requestedLitres || 0}L ({(req.fuelType || '').toLowerCase()})
                       </span>
                       <span className="text-xs text-slate-400">
-                        {new Date(req.createdAt).toLocaleDateString('sw-TZ')}
+                        <time dateTime={toTanzaniaIsoString(req.createdAt)}>
+                          {formatTanzaniaDate(req.createdAt)}
+                        </time>
                       </span>
                       <span className="text-xs font-semibold text-primary-500 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                         Angalia <ArrowRight className="h-3 w-3" />
@@ -336,3 +339,4 @@ export function RequestListPage({ role, mode }: RequestListPageProps) {
     </div>
   )
 }
+
