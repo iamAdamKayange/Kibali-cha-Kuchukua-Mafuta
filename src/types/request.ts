@@ -77,7 +77,10 @@ export interface FuelRequest {
     signature: string
     date: Date
   }
-  
+
+  finalApproverId?: string
+  finalApprovedAt?: Date | string
+
   createdAt: Date | string
   updatedAt: Date | string
 }
