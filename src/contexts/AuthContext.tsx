@@ -408,6 +408,8 @@ function clearStoredSession() {
     localStorage.removeItem('token')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
+    localStorage.removeItem('csrfToken')
+    localStorage.removeItem('csrfSecret')
     deleteCookie('token')
     deleteCookie('refreshToken')
   }

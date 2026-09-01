@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building, Calendar, Car, CheckCircle, FileText, Fuel, Gauge, MapPin, User } from 'lucide-react'
+import { ArrowLeft, Building, Calendar, Car, CheckCircle, FileText, Fuel, Gauge, MapPin, Printer, User } from 'lucide-react'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Sidebar } from '@/components/common/Sidebar'
@@ -16,6 +16,7 @@ import { RequestTimeline } from '@/components/requests/RequestTimeline'
 import { getUserDisplayName, roleToDashboard, useAuth } from '@/contexts/AuthContext'
 import { formatTanzaniaDateTime, formatTanzaniaDate } from '@/lib/dates'
 import { useRequests } from '@/hooks/useRequests'
+import { api } from '@/lib/api'
 import type { FuelRequest } from '@/types'
 
 type SidebarRole = 'admin' | 'mwombaji' | 'mkuu-idara' | 'afisa-usafirishaji' | 'ada-dahrm' | 'ununuzi-ugavi'
@@ -69,6 +70,7 @@ function approvalStage(role?: string) {
 function normalizeStatus(status: string): 'pending' | 'submitted' | 'approved' | 'rejected' | 'completed' {
   if (status.includes('REJECTED') || status === 'CANCELLED') return 'rejected'
   if (status === 'COMPLETED' || status === 'FUEL_ISSUED') return 'completed'
+  if (status === 'FULLY_APPROVED') return 'approved'
   if (status.includes('APPROVED')) return 'approved'
   if (status.includes('PENDING')) return 'pending'
   return 'submitted'
@@ -99,7 +101,8 @@ function timeline(request: DetailRequest) {
     { key: 'submitted', label: 'Ombi Limewasilishwa' },
     { key: 'head', label: 'Idhini ya Mkuu wa Idara' },
     { key: 'transport', label: 'Idhini ya Afisa Usafirishaji' },
-    { key: 'ada', label: 'Idhini ya ADA' },
+    { key: 'ada', label: 'Idhini ya ADA (Final)' },
+    { key: 'fully_approved', label: 'Idhini Kamili' },
     { key: 'issue', label: 'Utoaji wa Mafuta' },
   ]
 
@@ -111,6 +114,21 @@ function timeline(request: DetailRequest) {
           user: applicantName(request),
           date: formatTanzaniaDateTime(request.createdAt),
         }
+    }
+
+    if (item.key === 'fully_approved') {
+      if (request.status === 'FULLY_APPROVED' || request.status === 'COMPLETED') {
+        return {
+          label: item.label,
+          status: 'completed' as const,
+          user: request.finalApproverId ? 'Final Approver' : 'N/A',
+          date: request.finalApprovedAt ? formatTanzaniaDateTime(request.finalApprovedAt) : undefined,
+        }
+      }
+      return {
+        label: item.label,
+        status: 'pending' as const,
+      }
     }
 
     const approval = request.approvals?.find((entry) => entry.stage?.toLowerCase().includes(item.key))
@@ -128,6 +146,7 @@ function timeline(request: DetailRequest) {
       PENDING_HEAD_APPROVAL: 'head',
       PENDING_TRANSPORT_APPROVAL: 'transport',
       PENDING_DA_APPROVAL: 'ada',
+      FULLY_APPROVED: 'fully_approved',
       PENDING_FUEL_ISSUANCE: 'issue',
     }
     const currentKey = currentByStatus[request.status]
@@ -150,6 +169,8 @@ export default function RequestDetailPage() {
   const [actionError, setActionError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
   const [successToast, setSuccessToast] = useState<string | null>(null)
+  const [canPrint, setCanPrint] = useState(false)
+  const [printLoading, setPrintLoading] = useState(false)
   const { user } = useAuth()
   const { fetchRequest, approveRequest, rejectRequest, issueFuel, loading, error } = useRequests({ autoFetch: false })
   const role = sidebarRole(user?.role)
@@ -164,6 +185,202 @@ export default function RequestDetailPage() {
       mounted = false
     }
   }, [fetchRequest, id])
+
+  // Check print permissions when request or user changes
+  useEffect(() => {
+    if (request && user) {
+      checkPrintPermission()
+    }
+  }, [request, user])
+
+  const checkPrintPermission = async () => {
+    try {
+      const response = await api.checkPrintPermission(id)
+      if (response.success && response.data) {
+        setCanPrint(response.data.canPrint)
+      }
+    } catch (error) {
+      console.error('Failed to check print permission:', error)
+      setCanPrint(false)
+    }
+  }
+
+  const handlePrintPermit = async () => {
+    setPrintLoading(true)
+    try {
+      const response = await api.generateFuelPermit(id)
+      if (response.success && response.data) {
+        // Open print dialog with document data
+        printDocument(response.data, 'FUEL_PERMIT')
+        setSuccessToast('Fuel Permit imetengenezwa kwa ajili ya kuchapisha!')
+      }
+    } catch (error) {
+      setActionError('Imeshindikana kutengeneza Fuel Permit. Tafadhali jaribu tena.')
+    } finally {
+      setPrintLoading(false)
+    }
+  }
+
+  const handlePrintStatement = async () => {
+    setPrintLoading(true)
+    try {
+      const response = await api.generateFuelStatement(id)
+      if (response.success && response.data) {
+        // Open print dialog with document data
+        printDocument(response.data, 'FUEL_STATEMENT')
+        setSuccessToast('Fuel Statement imetengenezwa kwa ajili ya kuchapisha!')
+      }
+    } catch (error) {
+      setActionError('Imeshindikana kutengeneza Fuel Statement. Tafadhali jaribu tena.')
+    } finally {
+      setPrintLoading(false)
+    }
+  }
+
+  const printDocument = (data: any, documentType: string) => {
+    // Create a simple HTML document for printing
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const title = documentType === 'FUEL_PERMIT' ? 'FUEL PERMIT - KIBALI CHA KUCHUKUA MAFUTA' : 'FUEL STATEMENT - TAARIFA YA MAFUTA'
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; }
+          .header h1 { margin: 0; font-size: 24px; }
+          .header p { margin: 5px 0; color: #666; }
+          .section { margin-bottom: 20px; }
+          .section h2 { background: #f0f0f0; padding: 10px; margin: 0 0 10px 0; font-size: 16px; }
+          .row { display: flex; margin-bottom: 8px; }
+          .label { width: 200px; font-weight: bold; }
+          .value { flex: 1; }
+          .approvals { margin-top: 20px; }
+          .approval { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          @media print { body { -webkit-print-color-adjust: exact; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${title}</h1>
+          <p>Jamhuri ya Muungano wa Tanzania</p>
+          <p>Wizara ya Habari, Utamaduni, Sanaa na Michezo</p>
+        </div>
+        
+        <div class="section">
+          <h2>Taarifa ya Ombi</h2>
+          <div class="row"><span class="label">Namba ya Ombi:</span><span class="value">${data.requestNumber}</span></div>
+          <div class="row"><span class="label">Tarehe:</span><span class="value">${new Date(data.issuedDate || data.generatedDate).toLocaleDateString('sw-TZ')}</span></div>
+        </div>
+
+        <div class="section">
+          <h2>Maelezo ya Dereva</h2>
+          <div class="row"><span class="label">Jina:</span><span class="value">${data.driver?.name || data.driver?.name}</span></div>
+          <div class="row"><span class="label">Namba ya Wafanyikazi:</span><span class="value">${data.driver?.employeeNumber}</span></div>
+          <div class="row"><span class="label">Barua Pepe:</span><span class="value">${data.driver?.email}</span></div>
+        </div>
+
+        <div class="section">
+          <h2>Idara</h2>
+          <div class="row"><span class="label">Jina la Idara:</span><span class="value">${data.department?.name}</span></div>
+        </div>
+
+        <div class="section">
+          <h2 Maelezo ya Gari</h2>
+          <div class="row"><span class="label">Namba ya Gari:</span><span class="value">${data.vehicle?.number}</span></div>
+          <div class="row"><span class="label">GPSA:</span><span class="value">${data.vehicle?.gpsa}</span></div>
+          <div class="row"><span class="label">Aina ya Mafuta:</span><span class="value">${data.vehicle?.fuelType || data.fuel?.type || data.request?.fuelType}</span></div>
+        </div>
+
+        ${documentType === 'FUEL_PERMIT' ? `
+        <div class="section">
+          <h2>Maelezo ya Mafuta</h2>
+          <div class="row"><span class="label">Aina ya Mafuta:</span><span class="value">${data.fuel?.type}</span></div>
+          <div class="row"><span class="label">Kiasi Ambacho Kimoombwa:</span><span class="value">${data.fuel?.requestedLitres} Litres</span></div>
+          <div class="row"><span class="label">Kiasi Ambacho Kidhinishwa:</span><span class="value">${data.fuel?.approvedLitres} Litres</span></div>
+        </div>
+
+        <div class="section">
+          <h2>Safari</h2>
+          <div class="row"><span class="label">Kwa ajili ya:</span><span class="value">${data.journey?.purpose}</span></div>
+          <div class="row"><span class="label">Km za Kuanzia:</span><span class="value">${data.journey?.kmFrom}</span></div>
+          <div class="row"><span class="label">Km za Sasa:</span><span class="value">${data.journey?.kmTo}</span></div>
+          <div class="row"><span class="label">Km Zilizotumika:</span><span class="value">${data.journey?.kmUsed}</span></div>
+        </div>
+        ` : `
+        <div class="section">
+          <h2>Maelezo ya Ombi la Mafuta</h2>
+          <div class="row"><span class="label">Aina ya Mafuta:</span><span class="value">${data.request?.fuelType}</span></div>
+          <div class="row"><span class="label">Kiasi Ambacho Kimoombwa:</span><span class="value">${data.request?.requestedLitres} Litres</span></div>
+          <div class="row"><span class="label">Kiasi Ambacho Kidhinishwa:</span><span class="value">${data.request?.approvedLitres} Litres</span></div>
+          <div class="row"><span class="label">Kiasi Ambacho Chatolewa:</span><span class="value">${data.request?.issuedLitres || 'Hajachotolewa'} Litres</span></div>
+          <div class="row"><span class="label">Tarehe ya Ombi:</span><span class="value">${new Date(data.request?.requestDate).toLocaleDateString('sw-TZ')}</span></div>
+          <div class="row"><span class="label">Tarehe ya Idhini ya Mwisho:</span><span class="value">${data.request?.finalApprovedAt ? new Date(data.request?.finalApprovedAt).toLocaleDateString('sw-TZ') : 'N/A'}</span></div>
+        </div>
+
+        <div class="section">
+          <h2>Safari</h2>
+          <div class="row"><span class="label">Km za Kuanzia:</span><span class="value">${data.journey?.kmFrom}</span></div>
+          <div class="row"><span class="label">Km za Sasa:</span><span class="value">${data.journey?.kmTo}</span></div>
+          <div class="row"><span class="label">Km Zilizotumika:</span><span class="value">${data.journey?.kmUsed}</span></div>
+        </div>
+
+        ${data.issuance ? `
+        <div class="section">
+          <h2>Utoaji wa Mafuta</h2>
+          <div class="row"><span class="label">Mtoaji:</span><span class="value">${data.issuance.issuedBy}</span></div>
+          <div class="row"><span class="label">Cheo:</span><span class="value">${data.issuance.designation}</span></div>
+          <div class="row"><span class="label">Kiasi Ambacho Chatolewa:</span><span class="value">${data.issuance.litresIssued} Litres</span></div>
+          <div class="row"><span class="label">Namba ya Token:</span><span class="value">${data.issuance.tokenNumber}</span></div>
+          <div class="row"><span class="label">Tarehe ya Utoaji:</span><span class="value">${new Date(data.issuance.issuedAt).toLocaleDateString('sw-TZ')}</span></div>
+        </div>
+        ` : ''}
+        `}
+
+        ${data.approvals && data.approvals.length > 0 ? `
+        <div class="approvals">
+          <h2>Idhini Zilizotolewa</h2>
+          ${data.approvals.map((approval: any) => `
+            <div class="approval">
+              <div class="row"><span class="label">Hatua:</span><span class="value">${approval.stage}</span></div>
+              <div class="row"><span class="label">Idhinishwa na:</span><span class="value">${approval.approver}</span></div>
+              <div class="row"><span class="label">Cheo:</span><span class="value">${approval.designation}</span></div>
+              <div class="row"><span class="label">Tarehe:</span><span class="value">${new Date(approval.approvedAt).toLocaleDateString('sw-TZ')}</span></div>
+              ${approval.litresApproved ? `<div class="row"><span class="label">Lita Zilizoidhinishwa:</span><span class="value">${approval.litresApproved} Litres</span></div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+
+        ${data.finalApprover ? `
+        <div class="section">
+          <h2>Idhinishaji wa Mwisho</h2>
+          <div class="row"><span class="label">Jina:</span><span class="value">${data.finalApprover.name}</span></div>
+          <div class="row"><span class="label">Cheo:</span><span class="value">${data.finalApprover.designation}</span></div>
+        </div>
+        ` : ''}
+
+        <div class="footer">
+          <p>Hiki ni hatari rasmi ya mfumo wa Kibali cha Kuchukua Mafuta</p>
+          <p>Imetengenezwa mnamo: ${new Date().toLocaleString('sw-TZ')}</p>
+        </div>
+      </body>
+      </html>
+    `
+
+    printWindow.document.write(html)
+    printWindow.document.close()
+    
+    // Wait for content to load then print
+    setTimeout(() => {
+      printWindow.print()
+    }, 500)
+  }
 
   const summary = useMemo(() => {
     if (!request) return null
@@ -312,11 +529,49 @@ const submitAda = async (data: SectionDData) => {
       return <SectionDForm onSubmit={submitAda} loading={actionLoading} requestData={summary} initialData={{ cheo: user?.role || '' }} />
     }
 
-    if (role === 'ununuzi-ugavi' && request.status === 'PENDING_FUEL_ISSUANCE') {
+    if (role === 'ununuzi-ugavi' && (request.status === 'PENDING_FUEL_ISSUANCE' || request.status === 'FULLY_APPROVED')) {
       return <SectionEForm onSubmit={submitIssue} loading={actionLoading} requestData={{ ...summary, requestNumber: request.requestNumber }} initialData={{ cheo: user?.role || '', jina: getUserDisplayName(user) }} />
     }
 
     return null
+  }
+
+  const renderPrintOptions = () => {
+    if (!request || !user) return null
+    
+    // Only show print options if request is fully approved and user is the final approver
+    if (request.status !== 'FULLY_APPROVED') return null
+    if (!canPrint) return null
+
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+          <Printer className="h-5 w-5 text-primary-500" />
+          Chapisha Vibali Rasmi
+        </h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <button
+            onClick={handlePrintPermit}
+            disabled={printLoading}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-3 font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Printer className="h-4 w-4" />
+            {printLoading ? 'Inatengenezwa...' : 'Chapisha Fuel Permit'}
+          </button>
+          <button
+            onClick={handlePrintStatement}
+            disabled={printLoading}
+            className="flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Printer className="h-4 w-4" />
+            {printLoading ? 'Inatengenezwa...' : 'Chapisha Fuel Statement'}
+          </button>
+        </div>
+        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          *Huu ni ukurasa rasmi wa serikali. Usichapishi nakala za uwongo.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -403,6 +658,8 @@ const submitAda = async (data: SectionDData) => {
                       {renderAction()}
                     </div>
                   )}
+
+                  {renderPrintOptions()}
                 </section>
 
                 <aside className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">

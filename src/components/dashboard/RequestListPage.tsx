@@ -28,7 +28,7 @@ const pendingStatusByRole: Record<Exclude<DashboardRole, 'mwombaji'>, string[]> 
   'mkuu-idara': ['PENDING_HEAD_APPROVAL'],
   'afisa-usafirishaji': ['PENDING_TRANSPORT_APPROVAL'],
   'ada-dahrm': ['PENDING_DA_APPROVAL'],
-  'ununuzi-ugavi': ['PENDING_FUEL_ISSUANCE'],
+  'ununuzi-ugavi': ['FULLY_APPROVED', 'PENDING_FUEL_ISSUANCE'],
 }
 
 const pageCopy: Record<PageMode, { title: string; description: string; empty: string }> = {
@@ -62,6 +62,7 @@ const pendingStatuses = [
   'PENDING_HEAD_APPROVAL',
   'PENDING_TRANSPORT_APPROVAL',
   'PENDING_DA_APPROVAL',
+  'FULLY_APPROVED',
   'PENDING_FUEL_ISSUANCE',
 ]
 
@@ -75,6 +76,7 @@ const historyStatuses = [
   'HEAD_APPROVED',
   'TRANSPORT_APPROVED',
   'ADA_APPROVED',
+  'FULLY_APPROVED',
   'FUEL_ISSUED',
 ]
 

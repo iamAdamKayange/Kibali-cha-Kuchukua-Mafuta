@@ -39,10 +39,14 @@ function errorFromPayload(data: unknown, fallback: string) {
 export class ApiClient {
   private static instance: ApiClient
   private token: string | null = null
+  private csrfToken: string | null = null
+  private csrfSecret: string | null = null
 
   private constructor() {
     if (typeof window !== 'undefined') {
       this.token = getCookie('token') || localStorage.getItem('token')
+      this.csrfToken = localStorage.getItem('csrfToken')
+      this.csrfSecret = localStorage.getItem('csrfSecret')
     }
   }
 
@@ -67,6 +71,23 @@ export class ApiClient {
   }
 
   /**
+   * Set CSRF token
+   */
+  setCSRFToken(token: string, secret?: string) {
+    this.csrfToken = token
+    if (secret) {
+      this.csrfSecret = secret
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('csrfToken', token)
+      if (secret) {
+        localStorage.setItem('csrfSecret', secret)
+      }
+    }
+  }
+
+  /**
    * Get current token
    */
   getToken(): string | null {
@@ -78,9 +99,13 @@ export class ApiClient {
    */
   clearToken() {
     this.token = null
+    this.csrfToken = null
+    this.csrfSecret = null
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token')
+      localStorage.removeItem('csrfToken')
+      localStorage.removeItem('csrfSecret')
       deleteCookie('token')
     }
   }
@@ -132,6 +157,20 @@ export class ApiClient {
       )
     }
 
+    /*
+     * Add CSRF token for state-changing requests
+     */
+    if (
+      this.csrfToken &&
+      this.csrfSecret &&
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(
+        (options.method || 'GET').toUpperCase()
+      )
+    ) {
+      headers.set('X-CSRF-Token', this.csrfToken)
+      headers.set('X-CSRF-Secret', this.csrfSecret)
+    }
+
     const controller =
       options.signal ? null : new AbortController()
 
@@ -148,6 +187,15 @@ export class ApiClient {
         headers,
         signal: options.signal || controller?.signal,
       })
+
+      /*
+       * Capture CSRF token from response header
+       */
+      const csrfTokenFromResponse = response.headers.get('X-CSRF-Token')
+      const csrfSecretFromResponse = response.headers.get('X-CSRF-Secret')
+      if (csrfTokenFromResponse) {
+        this.setCSRFToken(csrfTokenFromResponse, csrfSecretFromResponse || undefined)
+      }
 
       /*
        * Handle empty responses
@@ -330,6 +378,125 @@ export class ApiClient {
           ? JSON.stringify(body)
           : undefined,
     })
+  }
+
+  /**
+   * Document Generation Methods
+   */
+  async checkPrintPermission(requestId: string): Promise<ApiResponse<{ canPrint: boolean }>> {
+    return this.get<{ canPrint: boolean }>(`/documents/${requestId}/can-print`)
+  }
+
+  async generateFuelPermit(requestId: string): Promise<ApiResponse<any>> {
+    return this.get<any>(`/documents/${requestId}/permit`)
+  }
+
+  async generateFuelStatement(requestId: string): Promise<ApiResponse<any>> {
+    return this.get<any>(`/documents/${requestId}/statement`)
+  }
+
+  /**
+   * Export Methods
+   */
+  async exportFuelRequestsPDF(filters?: Record<string, string>): Promise<Blob> {
+    const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : ''
+    const url = `${API_URL}/api/exports/fuel-requests/pdf${queryString}`
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': this.token ? `Bearer ${this.token}` : '',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to export PDF')
+    }
+
+    return response.blob()
+  }
+
+  async exportFuelRequestsExcel(filters?: Record<string, string>): Promise<Blob> {
+    const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : ''
+    const url = `${API_URL}/api/exports/fuel-requests/excel${queryString}`
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': this.token ? `Bearer ${this.token}` : '',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to export Excel')
+    }
+
+    return response.blob()
+  }
+
+  async exportAuditLogsPDF(filters?: Record<string, string>): Promise<Blob> {
+    const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : ''
+    const url = `${API_URL}/api/exports/audit-logs/pdf${queryString}`
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': this.token ? `Bearer ${this.token}` : '',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to export PDF')
+    }
+
+    return response.blob()
+  }
+
+  async exportAuditLogsExcel(filters?: Record<string, string>): Promise<Blob> {
+    const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : ''
+    const url = `${API_URL}/api/exports/audit-logs/excel${queryString}`
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': this.token ? `Bearer ${this.token}` : '',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to export Excel')
+    }
+
+    return response.blob()
+  }
+
+  /**
+   * Analytics Methods
+   */
+  async getSystemStats(): Promise<ApiResponse<any>> {
+    return this.get<any>('/api/analytics/system-stats')
+  }
+
+  async getFuelConsumptionByMonth(year?: number): Promise<ApiResponse<any>> {
+    const queryString = year ? `?year=${year}` : ''
+    return this.get<any>(`/api/analytics/fuel-consumption${queryString}`)
+  }
+
+  async getRequestsByDepartment(): Promise<ApiResponse<any>> {
+    return this.get<any>('/api/analytics/departments')
+  }
+
+  async getRequestsByStatus(): Promise<ApiResponse<any>> {
+    return this.get<any>('/api/analytics/status')
+  }
+
+  async getApprovalStatsByApprover(): Promise<ApiResponse<any>> {
+    return this.get<any>('/api/analytics/approvers')
+  }
+
+  async getRecentActivity(limit?: number): Promise<ApiResponse<any>> {
+    const queryString = limit ? `?limit=${limit}` : ''
+    return this.get<any>(`/api/analytics/recent-activity${queryString}`)
+  }
+
+  async getDashboardSummary(): Promise<ApiResponse<any>> {
+    return this.get<any>('/api/analytics/dashboard')
   }
 }
 
