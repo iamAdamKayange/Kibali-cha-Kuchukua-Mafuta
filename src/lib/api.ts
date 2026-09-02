@@ -289,7 +289,7 @@ export class ApiClient {
         error.name === 'AbortError'
           ? 'Server imechelewa kujibu. Tafadhali jaribu tena baada ya muda mfupi.'
           : error instanceof TypeError
-            ? 'Imeshindikana kuunganisha na server. Hakikisha backend ya Render ipo online na CORS/URL zimewekwa sahihi.'
+            ? 'Imeshindikana kuunganisha na server. Hakikisha backend ipo online na CORS/URL zimewekwa sahihi.'
             : error instanceof Error
               ? error.message
               : 'Network error'
