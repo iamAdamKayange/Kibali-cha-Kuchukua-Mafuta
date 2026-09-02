@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle, Clock, FileText, Fuel, ListChecks, XCircle, ArrowRight, X, Info, ChevronDown, type LucideIcon } from 'lucide-react'
@@ -149,14 +149,26 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     return 'N/A'
   }
 
-  const handleStatCardClick = (label: string) => {
+  const { requests, loading, error, total } = useRequests({ autoFetch: true, limit: 20 })
+  const page = copy[role]
+  const Icon = page.icon
+
+  const handleStatCardClick = useCallback((label: string) => {
     let filtered = requests
     if (label === 'Yanasubiri') {
-      filtered = requests.filter(isPending)
+      if (role === 'ada-dahrm') {
+        filtered = requests.filter((r) => r.status === 'PENDING_DA_APPROVAL')
+      } else {
+        filtered = requests.filter(isPending)
+      }
     } else if (label === 'Yamekataliwa') {
       filtered = requests.filter((request) => rejectedStatuses.includes(request.status))
-    } else if (label === 'Yamekamilika') {
-      filtered = requests.filter((request) => completedStatuses.includes(request.status))
+    } else if (label === 'Yamekamilika' || label === 'Yameidhinishwa') {
+      if (role === 'ada-dahrm') {
+        filtered = requests.filter((r) => r.status === 'FULLY_APPROVED')
+      } else {
+        filtered = requests.filter((request) => completedStatuses.includes(request.status))
+      }
     } else if (label === 'Jumla ya Lita') {
       filtered = requests.filter((request) => litres(request) > 0)
     }
@@ -165,13 +177,15 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
       title: label,
       requests: filtered,
     })
-  }
+  }, [requests, role])
 
-  const { requests, loading, error, total } = useRequests({ autoFetch: true, limit: 20 })
-  const page = copy[role]
-  const Icon = page.icon
-
-  const pending = useMemo(() => requests.filter(isPending).slice(0, 6), [requests])
+  // ADA needs to see both pending and fully approved requests
+  const pending = useMemo(() => {
+    if (role === 'ada-dahrm') {
+      return requests.slice(0, 6) // Show all requests (pending + approved)
+    }
+    return requests.filter(isPending).slice(0, 6)
+  }, [requests, role])
   const stats = [
     { label: 'Maombi Yote', value: total || requests.length, icon: FileText, color: 'text-primary-500' },
     { label: 'Yanasubiri', value: requests.filter(isPending).length, icon: Clock, color: 'text-warning-500' },
@@ -181,6 +195,11 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
 
   if (role === 'mwombaji') {
     stats[2] = { label: 'Yamekamilika', value: requests.filter((request) => completedStatuses.includes(request.status)).length, icon: CheckCircle, color: 'text-success-500' }
+  }
+
+  if (role === 'ada-dahrm') {
+    stats[1] = { label: 'Yanasubiri', value: requests.filter((r) => r.status === 'PENDING_DA_APPROVAL').length, icon: Clock, color: 'text-warning-500' }
+    stats[2] = { label: 'Yameidhinishwa', value: requests.filter((r) => r.status === 'FULLY_APPROVED').length, icon: CheckCircle, color: 'text-success-500' }
   }
 
   return (
