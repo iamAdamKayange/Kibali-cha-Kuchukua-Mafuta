@@ -155,6 +155,14 @@ export class ApiClient {
         'Authorization',
         `Bearer ${this.token}`
       )
+      // Debug: Log token presence without exposing the token
+      console.log('[API] Authorization header attached:', {
+        hasToken: !!this.token,
+        tokenLength: this.token.length,
+        tokenPrefix: this.token.substring(0, 10) + '...'
+      })
+    } else {
+      console.log('[API] No token available for request:', normalizedEndpoint)
     }
 
     /*

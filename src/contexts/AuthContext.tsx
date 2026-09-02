@@ -108,6 +108,14 @@ export function AuthProvider({
        */
       api.setToken(accessToken)
 
+      // Debug: Log token restoration
+      console.log('[Auth] Token restored from storage:', {
+        hasToken: !!accessToken,
+        tokenLength: accessToken.length,
+        tokenPrefix: accessToken.substring(0, 10) + '...',
+        storageSource: getCookie('token') ? 'cookie' : 'localStorage'
+      })
+
       /**
        * Restore cached user immediately.
        *
@@ -293,6 +301,15 @@ export function AuthProvider({
           'Login succeeded but user information was not returned.'
         )
       }
+
+      // Debug: Log token storage
+      console.log('[Auth] Login successful - saving tokens:', {
+        accessTokenLength: accessToken.length,
+        accessTokenPrefix: accessToken.substring(0, 10) + '...',
+        hasRefreshToken: !!refreshToken,
+        userRole: loggedInUser.role,
+        userId: loggedInUser.id
+      })
 
       /**
        * ------------------------------------------------
