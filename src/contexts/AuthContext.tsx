@@ -73,6 +73,26 @@ export function AuthProvider({
   })
 
   /**
+   * Handle authentication invalidation from API layer
+   */
+  const handleAuthInvalidated = useCallback((): void => {
+    console.log('[Auth] Authentication invalidated by API layer')
+    setUser(null)
+    setLoading(false)
+    // Only redirect if not already on login page
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+      router.replace('/login')
+    }
+  }, [router])
+
+  /**
+   * Register auth invalidation callback with API client
+   */
+  useEffect(() => {
+    api.registerAuthInvalidatedCallback(handleAuthInvalidated)
+  }, [handleAuthInvalidated])
+
+  /**
    * RESTORE SESSION
    *
    * Runs once when the application starts.
@@ -185,7 +205,7 @@ export function AuthProvider({
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [router])
 
   /**
    * INITIAL SESSION RESTORE

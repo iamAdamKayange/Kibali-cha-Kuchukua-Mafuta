@@ -42,6 +42,7 @@ export class ApiClient {
   private csrfToken: string | null = null
   private csrfSecret: string | null = null
   private refreshPromise: Promise<void> | null = null // Track ongoing refresh
+  private authInvalidatedCallback: (() => void) | null = null // Callback for auth invalidation
 
   private constructor() {
     if (typeof window !== 'undefined') {
@@ -84,6 +85,26 @@ export class ApiClient {
       localStorage.setItem('csrfToken', token)
       if (secret) {
         localStorage.setItem('csrfSecret', secret)
+      }
+    }
+  }
+
+  /**
+   * Register callback for auth invalidation
+   */
+  registerAuthInvalidatedCallback(callback: () => void): void {
+    this.authInvalidatedCallback = callback
+  }
+
+  /**
+   * Trigger auth invalidation callback
+   */
+  private notifyAuthInvalidated() {
+    if (this.authInvalidatedCallback) {
+      try {
+        this.authInvalidatedCallback()
+      } catch (error) {
+        console.error('[API] Error in auth invalidation callback:', error)
       }
     }
   }
@@ -163,6 +184,14 @@ export class ApiClient {
       deleteCookie('token')
       deleteCookie('refreshToken')
     }
+  }
+
+  /**
+   * Clear authentication and notify AuthContext
+   */
+  clearAuthentication() {
+    this.clearToken()
+    this.notifyAuthInvalidated()
   }
 
   /**
@@ -353,8 +382,8 @@ export class ApiClient {
           .catch((error) => {
             console.error('[API] Refresh failed:', error)
             this.refreshPromise = null
-            // Clear session on refresh failure
-            this.clearToken()
+            // Clear session and notify AuthContext on refresh failure
+            this.clearAuthentication()
             // Force redirect to login
             if (typeof window !== 'undefined') {
               window.location.href = '/login'
