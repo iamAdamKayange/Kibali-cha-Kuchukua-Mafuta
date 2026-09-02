@@ -61,15 +61,11 @@ export function AuthProvider({
     const accessToken = getCookie('token') || localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
 
-    if (!accessToken || !storedUser) return null
+    // Don't restore user from localStorage until verified
+    // Only check if we have a token
+    if (!accessToken) return null
 
-    try {
-      const parsedUser = JSON.parse(storedUser) as User
-      return parsedUser?.id ? parsedUser : null
-    } catch {
-      localStorage.removeItem('user')
-      return null
-    }
+    return null // User will be set after verification
   })
   const [loading, setLoading] = useState(() => {
     if (typeof window === 'undefined') return true
@@ -108,36 +104,10 @@ export function AuthProvider({
        */
       api.setToken(accessToken)
 
-      // Debug: Log token restoration
-      console.log('[Auth] Token restored from storage:', {
-        hasToken: !!accessToken,
-        tokenLength: accessToken.length,
-        tokenPrefix: accessToken.substring(0, 10) + '...',
-        storageSource: getCookie('token') ? 'cookie' : 'localStorage'
-      })
-
       /**
-       * Restore cached user immediately.
-       *
-       * This prevents unnecessary blank/loading states
-       * when refreshing the dashboard.
+       * DO NOT restore cached user before verification.
+       * User will be set only after successful /api/auth/me verification.
        */
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser) as User
-
-          if (parsedUser && parsedUser.id) {
-            setUser(parsedUser)
-          }
-        } catch (error) {
-          console.error(
-            'Failed to parse stored user:',
-            error
-          )
-
-          localStorage.removeItem('user')
-        }
-      }
 
       /**
        * Verify access token with backend.
@@ -455,6 +425,7 @@ export function AuthProvider({
 
 function clearStoredSession() {
   if (typeof window !== 'undefined') {
+    // Clear all authentication data
     localStorage.removeItem('token')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
@@ -462,9 +433,12 @@ function clearStoredSession() {
     localStorage.removeItem('csrfSecret')
     deleteCookie('token')
     deleteCookie('refreshToken')
+    
+    // Clear API client token
+    api.clearToken()
+    
+    console.log('[Auth] Session cleared completely')
   }
-
-  api.clearToken()
 }
 
 

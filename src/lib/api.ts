@@ -41,6 +41,7 @@ export class ApiClient {
   private token: string | null = null
   private csrfToken: string | null = null
   private csrfSecret: string | null = null
+  private refreshPromise: Promise<void> | null = null // Track ongoing refresh
 
   private constructor() {
     if (typeof window !== 'undefined') {
@@ -95,18 +96,72 @@ export class ApiClient {
   }
 
   /**
+   * Get refresh token from storage
+   */
+  private getRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('refreshToken') || null
+  }
+
+  /**
+   * Refresh access token using refresh token
+   */
+  private async refreshAccessToken(): Promise<void> {
+    const refreshToken = this.getRefreshToken()
+    if (!refreshToken) {
+      throw new Error('No refresh token available')
+    }
+
+    console.log('[API] Attempting to refresh access token')
+
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Refresh token failed')
+    }
+
+    const data = await response.json()
+    if (!data.success || !data.data?.accessToken) {
+      throw new Error('Refresh token response invalid')
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = data.data
+
+    // Update tokens
+    this.token = accessToken
+    localStorage.setItem('token', accessToken)
+    setCookie('token', accessToken, 7)
+
+    if (newRefreshToken) {
+      localStorage.setItem('refreshToken', newRefreshToken)
+      setCookie('refreshToken', newRefreshToken, 30)
+    }
+
+    console.log('[API] Access token refreshed successfully')
+  }
+
+  /**
    * Clear authentication token
    */
   clearToken() {
     this.token = null
     this.csrfToken = null
     this.csrfSecret = null
+    this.refreshPromise = null // Clear refresh promise
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('csrfToken')
       localStorage.removeItem('csrfSecret')
       deleteCookie('token')
+      deleteCookie('refreshToken')
     }
   }
 
@@ -155,14 +210,6 @@ export class ApiClient {
         'Authorization',
         `Bearer ${this.token}`
       )
-      // Debug: Log token presence without exposing the token
-      console.log('[API] Authorization header attached:', {
-        hasToken: !!this.token,
-        tokenLength: this.token.length,
-        tokenPrefix: this.token.substring(0, 10) + '...'
-      })
-    } else {
-      console.log('[API] No token available for request:', normalizedEndpoint)
     }
 
     /*
@@ -233,11 +280,142 @@ export class ApiClient {
        * IMPORTANT:
        * Do not automatically redirect here.
        * AuthContext should control logout/navigation.
+       * 
+       * Instead, attempt to refresh the access token.
        */
       if (response.status === 401) {
-        return {
-          success: false,
-          error: errorFromPayload(data, 'Session expired'),
+        console.log('[API] Received 401, attempting token refresh')
+
+        // If a refresh is already in progress, wait for it
+        if (this.refreshPromise) {
+          await this.refreshPromise
+          // Retry the original request with new token
+          const retryResponse = await fetch(url, {
+            ...options,
+            headers,
+            signal: options.signal || controller?.signal,
+          })
+          
+          // Update headers with new token
+          const retryHeaders = new Headers(options.headers)
+          retryHeaders.set('Content-Type', 'application/json')
+          if (this.token) {
+            retryHeaders.set('Authorization', `Bearer ${this.token}`)
+          }
+          
+          // Capture CSRF token from retry response
+          const csrfTokenFromRetry = retryResponse.headers.get('X-CSRF-Token')
+          const csrfSecretFromRetry = retryResponse.headers.get('X-CSRF-Secret')
+          if (csrfTokenFromRetry) {
+            this.setCSRFToken(csrfTokenFromRetry, csrfSecretFromRetry || undefined)
+          }
+          
+          // Process retry response
+          const retryContentType = retryResponse.headers.get('content-type') || ''
+          let retryData: unknown = null
+          
+          if (retryContentType.includes('application/json')) {
+            try {
+              retryData = await retryResponse.json()
+            } catch {
+              retryData = null
+            }
+          } else {
+            try {
+              retryData = await retryResponse.text()
+            } catch {
+              retryData = null
+            }
+          }
+          
+          if (retryResponse.ok) {
+            if (typeof retryData === 'object' && retryData !== null && 'success' in retryData) {
+              return retryData as ApiResponse<T>
+            }
+            return {
+              success: true,
+              data: retryData as T,
+            }
+          } else {
+            return {
+              success: false,
+              error: errorFromPayload(retryData, 'Request failed after refresh'),
+            }
+          }
+        }
+
+        // Start a new refresh operation
+        this.refreshPromise = this.refreshAccessToken()
+          .then(() => {
+            console.log('[API] Refresh completed successfully')
+            this.refreshPromise = null
+          })
+          .catch((error) => {
+            console.error('[API] Refresh failed:', error)
+            this.refreshPromise = null
+            // Clear session on refresh failure
+            this.clearToken()
+            // Force redirect to login
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login'
+            }
+            throw error
+          })
+
+        await this.refreshPromise
+
+        // Retry the original request with new token
+        const retryResponse = await fetch(url, {
+          ...options,
+          headers,
+          signal: options.signal || controller?.signal,
+        })
+        
+        // Update headers with new token
+        const retryHeaders = new Headers(options.headers)
+        retryHeaders.set('Content-Type', 'application/json')
+        if (this.token) {
+          retryHeaders.set('Authorization', `Bearer ${this.token}`)
+        }
+        
+        // Capture CSRF token from retry response
+        const csrfTokenFromRetry = retryResponse.headers.get('X-CSRF-Token')
+        const csrfSecretFromRetry = retryResponse.headers.get('X-CSRF-Secret')
+        if (csrfTokenFromRetry) {
+          this.setCSRFToken(csrfTokenFromRetry, csrfSecretFromRetry || undefined)
+        }
+        
+        // Process retry response
+        const retryContentType = retryResponse.headers.get('content-type') || ''
+        let retryData: unknown = null
+        
+        if (retryContentType.includes('application/json')) {
+          try {
+            retryData = await retryResponse.json()
+          } catch {
+            retryData = null
+          }
+        } else {
+          try {
+            retryData = await retryResponse.text()
+          } catch {
+            retryData = null
+          }
+        }
+        
+        if (retryResponse.ok) {
+          if (typeof retryData === 'object' && retryData !== null && 'success' in retryData) {
+            return retryData as ApiResponse<T>
+          }
+          return {
+            success: true,
+            data: retryData as T,
+          }
+        } else {
+          return {
+            success: false,
+            error: errorFromPayload(retryData, 'Request failed after refresh'),
+          }
         }
       }
 
