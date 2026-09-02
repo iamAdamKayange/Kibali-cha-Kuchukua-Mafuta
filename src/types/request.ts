@@ -1,5 +1,12 @@
 import { FuelType, RequestStatus } from '@/lib/constants'
 
+export interface RejectionDetails {
+  rejectedBy: string
+  rejectedByUser: string
+  reason: string
+  rejectedAt: string | Date
+}
+
 export interface FuelRequest {
   id: string
   requestNumber: string
@@ -38,6 +45,8 @@ export interface FuelRequest {
   
   status: string // Use string to handle all status types
   currentStage: 'mwombaji' | 'mkuu-idara' | 'afisa-usafirishaji' | 'ada-dahrm' | 'ununuzi-ugavi' | 'completed' | string
+  rejectionDetails?: RejectionDetails
+  rejectionReason?: string
   
   sectionB?: {
     approved: boolean

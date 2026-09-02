@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building, Calendar, Car, CheckCircle, FileText, Fuel, Gauge, MapPin, Printer, User } from 'lucide-react'
+import { ArrowLeft, Building, Calendar, Car, CheckCircle, FileText, Fuel, Gauge, MapPin, Printer, User, XCircle } from 'lucide-react'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Sidebar } from '@/components/common/Sidebar'
@@ -35,6 +35,12 @@ interface ApprovalRecord {
 
 interface DetailRequest extends FuelRequest {
   approvals?: ApprovalRecord[]
+  rejectionDetails?: {
+    rejectedBy: string
+    rejectedByUser: string
+    reason: string
+    rejectedAt: string | Date
+  }
 }
 
 function sidebarRole(role?: string): SidebarRole {
@@ -645,6 +651,33 @@ const submitAda = async (data: SectionDData) => {
                       ))}
                     </div>
                   </div>
+
+                  {request.rejectionDetails && (
+                    <div className="rounded-2xl border border-danger-200 bg-danger-50 p-6 dark:border-danger-900/40 dark:bg-danger-900/20">
+                      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-danger-900 dark:text-danger-100">
+                        <XCircle className="h-5 w-5 text-danger-600 dark:text-danger-400" />
+                        Ombi Limekataliwa
+                      </h2>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm text-danger-700 dark:text-danger-300">Imekataliwa na:</p>
+                          <p className="mt-1 font-medium text-danger-900 dark:text-danger-100">{request.rejectionDetails.rejectedBy}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-danger-700 dark:text-danger-300">Idhinishaji:</p>
+                          <p className="mt-1 font-medium text-danger-900 dark:text-danger-100">{request.rejectionDetails.rejectedByUser}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-danger-700 dark:text-danger-300">Sababu ya kukataliwa:</p>
+                          <p className="mt-1 font-medium text-danger-900 dark:text-danger-100">{request.rejectionDetails.reason}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-danger-700 dark:text-danger-300">Tarehe ya kukataliwa:</p>
+                          <p className="mt-1 font-medium text-danger-900 dark:text-danger-100">{formatTanzaniaDateTime(request.rejectionDetails.rejectedAt)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {actionError && (
                     <div className="rounded-xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700 dark:border-danger-900/40 dark:bg-danger-900/20 dark:text-danger-300">

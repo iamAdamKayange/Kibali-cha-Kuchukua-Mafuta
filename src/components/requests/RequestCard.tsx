@@ -7,6 +7,7 @@ import {
   Car,
   ArrowRight,
   Building,
+  XCircle,
 } from 'lucide-react'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import Link from 'next/link'
@@ -196,6 +197,7 @@ export function RequestCard({
   const fuelType = getFuelType(request)
   const date = getDate(request)
   const currentStage = getWorkflowStageLabel(request)
+  const rejectionDetails = isFuelRequest(request) ? request.rejectionDetails : null
 
   const handleClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button, a')) {
@@ -291,6 +293,19 @@ export function RequestCard({
         </div>
 
       </div>
+
+      {/* Rejection Info */}
+      {rejectionDetails && status === 'rejected' && (
+        <div className="mt-3 p-3 rounded-lg bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-900/40">
+          <div className="flex items-start gap-2">
+            <XCircle className="w-4 h-4 text-danger-600 dark:text-danger-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-danger-900 dark:text-danger-100">Imekataliwa na: {rejectionDetails.rejectedBy}</p>
+              <p className="text-xs text-danger-700 dark:text-danger-300 mt-0.5 truncate">{rejectionDetails.reason}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
