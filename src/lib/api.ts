@@ -2,10 +2,10 @@ import { getCookie, setCookie, deleteCookie } from '@/lib/cookies'
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://fuel-request-backend.onrender.com/api'
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://fuel-request-backend.onrender.com/api')
 ).replace(/\/+$/, '')
 
-const REQUEST_TIMEOUT_MS = 20000
+const REQUEST_TIMEOUT_MS = 60000
 
 interface PaginationMeta {
   total?: number
