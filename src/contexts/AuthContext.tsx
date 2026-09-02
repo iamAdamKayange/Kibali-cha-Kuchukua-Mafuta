@@ -149,9 +149,22 @@ export function AuthProvider({
       } else {
         /**
          * Token is invalid or expired.
+         * 
+         * This happens when:
+         * - Token was issued by old backend (Render) with different JWT secret
+         * - Token has expired
+         * - Backend configuration changed
+         * 
+         * Force logout and redirect to login.
          */
+        console.warn('Authentication verification failed:', response.error)
         clearStoredSession()
         setUser(null)
+        
+        // Only redirect if not already on login page
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          router.replace('/login')
+        }
       }
     } catch (error) {
       console.error(
@@ -164,13 +177,33 @@ export function AuthProvider({
        *
        * If backend is temporarily unavailable but we have
        * a cached user, don't immediately log the user out.
+       * 
+       * However, if the error is clearly an authentication
+       * error (401), clear the session.
        */
       const storedUser = localStorage.getItem('user')
+      const errorObj = error as any
+      
+      // Check if it's a 401 auth error
+      if (errorObj?.message?.includes('Session expired') || 
+          errorObj?.message?.includes('Unauthorized') ||
+          errorObj?.message?.includes('401')) {
+        console.warn('Authentication error detected, clearing session')
+        clearStoredSession()
+        setUser(null)
+        
+        // Only redirect if not already on login page
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          router.replace('/login')
+        }
+        return
+      }
 
       if (!storedUser) {
         clearStoredSession()
         setUser(null)
       }
+      // If we have a cached user and backend is down, keep them logged in
     } finally {
       setLoading(false)
     }
