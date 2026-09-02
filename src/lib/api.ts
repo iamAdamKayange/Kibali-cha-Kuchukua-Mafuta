@@ -2,7 +2,7 @@ import { getCookie, setCookie, deleteCookie } from '@/lib/cookies'
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
-  (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://fuel-request-backend.onrender.com/api')
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://fuel-request-backend-production.up.railway.app/api')
 ).replace(/\/+$/, '')
 
 const REQUEST_TIMEOUT_MS = 60000
