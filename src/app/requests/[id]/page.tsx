@@ -176,6 +176,7 @@ export default function RequestDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [successToast, setSuccessToast] = useState<string | null>(null)
   const [canPrint, setCanPrint] = useState(false)
+  const [printPermissionReason, setPrintPermissionReason] = useState<string | null>(null)
   const [printLoading, setPrintLoading] = useState(false)
   const { user } = useAuth()
   const { fetchRequest, approveRequest, rejectRequest, issueFuel, loading, error } = useRequests({ autoFetch: false })
@@ -204,10 +205,12 @@ export default function RequestDetailPage() {
       const response = await api.checkPrintPermission(id)
       if (response.success && response.data) {
         setCanPrint(response.data.canPrint)
+        setPrintPermissionReason(response.data.reason)
       }
     } catch (error) {
       console.error('Failed to check print permission:', error)
       setCanPrint(false)
+      setPrintPermissionReason('Failed to check print permission')
     }
   }
 
