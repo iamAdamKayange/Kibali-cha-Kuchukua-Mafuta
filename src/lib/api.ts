@@ -319,18 +319,17 @@ export class ApiClient {
         if (this.refreshPromise) {
           await this.refreshPromise
           // Retry the original request with new token
-          const retryResponse = await fetch(url, {
-            ...options,
-            headers,
-            signal: options.signal || controller?.signal,
-          })
-          
-          // Update headers with new token
           const retryHeaders = new Headers(options.headers)
           retryHeaders.set('Content-Type', 'application/json')
           if (this.token) {
             retryHeaders.set('Authorization', `Bearer ${this.token}`)
           }
+          
+          const retryResponse = await fetch(url, {
+            ...options,
+            headers: retryHeaders,
+            signal: options.signal || controller?.signal,
+          })
           
           // Capture CSRF token from retry response
           const csrfTokenFromRetry = retryResponse.headers.get('X-CSRF-Token')
@@ -394,18 +393,17 @@ export class ApiClient {
         await this.refreshPromise
 
         // Retry the original request with new token
-        const retryResponse = await fetch(url, {
-          ...options,
-          headers,
-          signal: options.signal || controller?.signal,
-        })
-        
-        // Update headers with new token
         const retryHeaders = new Headers(options.headers)
         retryHeaders.set('Content-Type', 'application/json')
         if (this.token) {
           retryHeaders.set('Authorization', `Bearer ${this.token}`)
         }
+        
+        const retryResponse = await fetch(url, {
+          ...options,
+          headers: retryHeaders,
+          signal: options.signal || controller?.signal,
+        })
         
         // Capture CSRF token from retry response
         const csrfTokenFromRetry = retryResponse.headers.get('X-CSRF-Token')

@@ -219,9 +219,11 @@ export default function RequestDetailPage() {
         // Open print dialog with document data
         printDocument(response.data, 'FUEL_PERMIT')
         setSuccessToast('Fuel Permit imetengenezwa kwa ajili ya kuchapisha!')
+      } else {
+        setActionError(response.error || 'Imeshindikana kutengeneza Fuel Permit. Tafadhali jaribu tena.')
       }
-    } catch (error) {
-      setActionError('Imeshindikana kutengeneza Fuel Permit. Tafadhali jaribu tena.')
+    } catch (error: any) {
+      setActionError(error.message || 'Imeshindikana kutengeneza Fuel Permit. Tafadhali jaribu tena.')
     } finally {
       setPrintLoading(false)
     }
@@ -235,9 +237,11 @@ export default function RequestDetailPage() {
         // Open print dialog with document data
         printDocument(response.data, 'FUEL_STATEMENT')
         setSuccessToast('Fuel Statement imetengenezwa kwa ajili ya kuchapisha!')
+      } else {
+        setActionError(response.error || 'Imeshindikana kutengeneza Fuel Statement. Tafadhali jaribu tena.')
       }
-    } catch (error) {
-      setActionError('Imeshindikana kutengeneza Fuel Statement. Tafadhali jaribu tena.')
+    } catch (error: any) {
+      setActionError(error.message || 'Imeshindikana kutengeneza Fuel Statement. Tafadhali jaribu tena.')
     } finally {
       setPrintLoading(false)
     }
