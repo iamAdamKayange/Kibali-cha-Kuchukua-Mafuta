@@ -70,14 +70,16 @@ const historyStatuses = [
   'approved',
   'rejected',
   'completed',
-  'APPROVED',
-  'REJECTED',
-  'COMPLETED',
   'HEAD_APPROVED',
+  'HEAD_REJECTED',
   'TRANSPORT_APPROVED',
+  'TRANSPORT_REJECTED',
   'ADA_APPROVED',
+  'ADA_REJECTED',
   'FULLY_APPROVED',
-  'FUEL_ISSUED',
+  'PENDING_FUEL_ISSUANCE',
+  'COMPLETED',
+  'CANCELLED',
 ]
 
 function requestText(request: FuelRequest) {

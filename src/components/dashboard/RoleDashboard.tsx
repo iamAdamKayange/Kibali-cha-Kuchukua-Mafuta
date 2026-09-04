@@ -121,8 +121,8 @@ const pendingStatuses = [
   'PENDING_FUEL_ISSUANCE',
 ]
 
-const rejectedStatuses = ['rejected', 'REJECTED', 'HEAD_REJECTED', 'TRANSPORT_REJECTED', 'ADA_REJECTED', 'CANCELLED']
-const completedStatuses = ['completed', 'COMPLETED', 'FUEL_ISSUED']
+const rejectedStatuses = ['HEAD_REJECTED', 'TRANSPORT_REJECTED', 'ADA_REJECTED', 'CANCELLED']
+const completedStatuses = ['FULLY_APPROVED', 'PENDING_FUEL_ISSUANCE', 'COMPLETED']
 
 function litres(request: FuelRequest) {
   return request.issuedLitres || request.approvedLitres || request.litres || request.requestedLitres || 0
