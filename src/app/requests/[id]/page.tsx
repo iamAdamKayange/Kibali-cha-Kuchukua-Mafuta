@@ -205,7 +205,7 @@ export default function RequestDetailPage() {
       const response = await api.checkPrintPermission(id)
       if (response.success && response.data) {
         setCanPrint(response.data.canPrint)
-        setPrintPermissionReason(response.data.reason)
+        setPrintPermissionReason(response.data.reason || null)
       }
     } catch (error) {
       console.error('Failed to check print permission:', error)
