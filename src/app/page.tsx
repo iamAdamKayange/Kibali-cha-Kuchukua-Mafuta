@@ -76,7 +76,7 @@ const dict = {
     contactTitle: 'Mawasiliano na Msaada',
     contactSubtitle: 'Tuko hapa kukusaidia saa 24/7 kwa maswali au changamoto ya kiufundi',
     address: 'The United Republic of Tanzania. Katibu Mkuu, WIZARA YA HABARI, UTAMADUNI, SANAA NA MICHEZO, P.O. Box 25, Dodoma, Tanzania, Mji wa Serikali Mtumba.',
-    phone: 'Simu: +255 (0) 26 2961800',
+    phone: 'Simu:  +255 26 2322 129 / +255 26 2322 128',
     email: 'Barua Pepe: support@mafuta.go.tz',
     copyright: 'Jamhuri ya Muungano wa Tanzania. Haki zote zimehifadhiwa.'
   },
@@ -126,7 +126,7 @@ const dict = {
     contactTitle: 'Contact & Support',
     contactSubtitle: 'We are here to support you 24/7 for any enquiries or technical difficulties',
     address: 'The United Republic of Tanzania. Secretary General, Ministry of Information, Culture, Arts and Sports, P.O. Box 25, Dodoma, Tanzania, Government City Mtumba.',
-    phone: 'Phone: +255 (0) 26 2961800',
+    phone: 'Phone:  +255 26 2322 129 / +255 26 2322 128',
     email: 'Email: support@mafuta.go.tz',
     copyright: 'United Republic of Tanzania. All Rights Reserved.'
   }
