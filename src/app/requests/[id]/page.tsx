@@ -175,7 +175,8 @@ export default function RequestDetailPage() {
   const [actionError, setActionError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
   const [successToast, setSuccessToast] = useState<string | null>(null)
-  const [canPrint, setCanPrint] = useState(false)
+  const [canPrintPermit, setCanPrintPermit] = useState(false)
+  const [canPrintStatement, setCanPrintStatement] = useState(false)
   const [printPermissionReason, setPrintPermissionReason] = useState<string | null>(null)
   const [printLoading, setPrintLoading] = useState(false)
   const { user } = useAuth()
@@ -204,12 +205,14 @@ export default function RequestDetailPage() {
     try {
       const response = await api.checkPrintPermission(id)
       if (response.success && response.data) {
-        setCanPrint(response.data.canPrint)
-        setPrintPermissionReason(response.data.reason || null)
+        setCanPrintPermit(response.data.canPrintPermit)
+        setCanPrintStatement(response.data.canPrintStatement)
+        setPrintPermissionReason(response.data.canPrintPermitReason || response.data.canPrintStatementReason || null)
       }
     } catch (error) {
       console.error('Failed to check print permission:', error)
-      setCanPrint(false)
+      setCanPrintPermit(false)
+      setCanPrintStatement(false)
       setPrintPermissionReason('Failed to check print permission')
     }
   }
@@ -552,9 +555,8 @@ const submitAda = async (data: SectionDData) => {
   const renderPrintOptions = () => {
     if (!request || !user) return null
     
-    // Only show print options if request is fully approved and user is the final approver
-    if (request.status !== 'FULLY_APPROVED') return null
-    if (!canPrint) return null
+    // Only show print options if request is fully approved or completed
+    if (request.status !== 'FULLY_APPROVED' && request.status !== 'COMPLETED') return null
 
     return (
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
@@ -565,16 +567,18 @@ const submitAda = async (data: SectionDData) => {
         <div className="grid gap-3 md:grid-cols-2">
           <button
             onClick={handlePrintPermit}
-            disabled={printLoading}
+            disabled={printLoading || !canPrintPermit}
             className="flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-3 font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title={!canPrintPermit ? printPermissionReason || 'Not authorized to print permit' : ''}
           >
             <Printer className="h-4 w-4" />
             {printLoading ? 'Inatengenezwa...' : 'Chapisha Fuel Permit'}
           </button>
           <button
             onClick={handlePrintStatement}
-            disabled={printLoading}
+            disabled={printLoading || !canPrintStatement}
             className="flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title={!canPrintStatement ? printPermissionReason || 'Not authorized to print statement' : ''}
           >
             <Printer className="h-4 w-4" />
             {printLoading ? 'Inatengenezwa...' : 'Chapisha Fuel Statement'}

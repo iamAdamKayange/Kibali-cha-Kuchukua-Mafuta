@@ -596,8 +596,8 @@ export class ApiClient {
   /**
    * Document Generation Methods
    */
-  async checkPrintPermission(requestId: string): Promise<ApiResponse<{ canPrint: boolean; reason?: string }>> {
-    return this.get<{ canPrint: boolean; reason?: string }>(`/documents/${requestId}/can-print`)
+  async checkPrintPermission(requestId: string): Promise<ApiResponse<{ canPrintPermit: boolean; canPrintPermitReason?: string; canPrintStatement: boolean; canPrintStatementReason?: string }>> {
+    return this.get<{ canPrintPermit: boolean; canPrintPermitReason?: string; canPrintStatement: boolean; canPrintStatementReason?: string }>(`/documents/${requestId}/can-print`)
   }
 
   async generateFuelPermit(requestId: string): Promise<ApiResponse<any>> {
