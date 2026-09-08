@@ -102,9 +102,9 @@ export default function ProfilePage() {
       return
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setToast({ type: 'error', message: 'Image size must be less than 5MB' })
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setToast({ type: 'error', message: 'Image size must be less than 2MB' })
       return
     }
 
