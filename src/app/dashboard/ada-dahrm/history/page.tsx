@@ -1,3 +1,5 @@
+'use client'
+
 import { RequestListPage } from '@/components/dashboard/RequestListPage'
 import { useAuth } from '@/contexts/AuthContext'
 
