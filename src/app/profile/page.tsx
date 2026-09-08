@@ -1,9 +1,9 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Building, KeyRound, Mail, Phone, Save, Shield, User } from 'lucide-react'
+import { ArrowLeft, Building, Camera, KeyRound, Mail, Phone, Save, Shield, User, X } from 'lucide-react'
 import Link from 'next/link'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
@@ -60,6 +60,7 @@ export default function ProfilePage() {
     lastName: '',
     email: '',
     phone: '',
+    avatar: '',
   })
 
   const [passwordForm, setPasswordForm] = useState({
@@ -67,6 +68,10 @@ export default function ProfilePage() {
     newPassword: '',
     confirmPassword: '',
   })
+
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string>('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const sidebarRole = useMemo(() => roleToSidebarRole(user?.role), [user?.role])
   const dashboardHref = user ? roleToDashboard(user.role) : '/login'
@@ -82,18 +87,66 @@ export default function ProfilePage() {
       lastName: user.lastName || '',
       email: user.email || '',
       phone: (user as any).phone || '',
+      avatar: (user as any).avatar || '',
     })
+    setAvatarPreview((user as any).avatar || '')
   }, [user])
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setToast({ type: 'error', message: 'Please select an image file' })
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ type: 'error', message: 'Image size must be less than 5MB' })
+      return
+    }
+
+    setSelectedAvatar(file)
+    
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleAvatarRemove = () => {
+    setSelectedAvatar(null)
+    setAvatarPreview('')
+    setProfileForm({ ...profileForm, avatar: '' })
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const handleProfileSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setSavingProfile(true)
+
+    // Convert avatar to base64 if selected
+    let avatarData = profileForm.avatar
+    if (selectedAvatar) {
+      const reader = new FileReader()
+      avatarData = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(selectedAvatar)
+      })
+    }
 
     const response = await api.put('/users/profile', {
       firstName: profileForm.firstName.trim(),
       lastName: profileForm.lastName.trim(),
       email: profileForm.email.trim(),
       phone: profileForm.phone.trim() || null,
+      avatar: avatarData || null,
     })
 
     setSavingProfile(false)
@@ -105,6 +158,8 @@ export default function ProfilePage() {
 
     if (response.data) {
       localStorage.setItem('user', JSON.stringify(response.data))
+      // Force auth context to refresh
+      window.location.reload()
     }
     setToast({ type: 'success', message: t('profile_updated') })
   }
@@ -172,8 +227,45 @@ export default function ProfilePage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="glass-card rounded-2xl p-6 lg:col-span-1"
               >
-                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-primary-500 text-3xl font-bold text-white">
-                  {getUserDisplayName(user).charAt(0).toUpperCase()}
+                <div className="mx-auto mb-4 relative">
+                  <div className="h-20 w-20 rounded-full overflow-hidden bg-primary-500 flex items-center justify-center">
+                    {avatarPreview ? (
+                      <img 
+                        src={avatarPreview} 
+                        alt="Profile" 
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-3xl font-bold text-white">
+                        {getUserDisplayName(user).charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-colors"
+                    title="Change profile picture"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </button>
+                  {avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={handleAvatarRemove}
+                      className="absolute bottom-0 left-0 h-8 w-8 rounded-full bg-danger-500 text-white flex items-center justify-center hover:bg-danger-600 transition-colors"
+                      title="Remove profile picture"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
                 <h2 className="text-center text-lg font-semibold text-gray-900 dark:text-white">
                   {getUserDisplayName(user)}
