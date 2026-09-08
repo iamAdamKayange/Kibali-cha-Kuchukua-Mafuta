@@ -214,7 +214,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
         })
       }
     }
-  }, [authUser?.id, authUser?.role])
+  }, [authUser?.id])
 
   useEffect(() => {
     return () => {

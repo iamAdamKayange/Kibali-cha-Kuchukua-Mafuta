@@ -34,6 +34,7 @@ interface UseRequestsOptions {
   initialFilters?: RequestFilter
   page?: number
   limit?: number
+  userId?: string // Add userId to force refetch on account switch
 }
 
 interface UseRequestsReturn {
@@ -67,6 +68,7 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
     initialFilters = {},
     page: initialPage = 1,
     limit = 10,
+    userId,
   } = options
 
   const [requests, setRequests] = useState<FuelRequest[]>([])
@@ -117,7 +119,7 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
     } finally {
       setLoading(false)
     }
-  }, [page, limit, filters])
+  }, [page, limit])
 
   const fetchRequest = useCallback(async (id: string): Promise<FuelRequest | null> => {
     setLoading(true)
@@ -284,7 +286,7 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
     if (autoFetch) {
       fetchRequests()
     }
-  }, [autoFetch, fetchRequests])
+  }, [autoFetch, page, limit, filters, userId])
 
   return {
     requests,

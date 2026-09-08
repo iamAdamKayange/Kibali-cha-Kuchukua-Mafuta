@@ -174,7 +174,7 @@ export class ApiClient {
     this.token = null
     this.csrfToken = null
     this.csrfSecret = null
-    this.refreshPromise = null // Clear refresh promise
+    this.refreshPromise = null // Clear refresh promise to prevent stale refresh loops
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token')
@@ -184,6 +184,8 @@ export class ApiClient {
       deleteCookie('token')
       deleteCookie('refreshToken')
     }
+    
+    console.log('[API] Token and session state cleared')
   }
 
   /**

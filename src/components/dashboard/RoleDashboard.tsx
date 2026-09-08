@@ -149,7 +149,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     return 'N/A'
   }
 
-  const { requests, loading, error, total } = useRequests({ autoFetch: true, limit: 20 })
+  const { requests, loading, error, total } = useRequests({ autoFetch: true, limit: 20, userId: user?.id })
   const page = copy[role]
   const Icon = page.icon
 

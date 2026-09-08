@@ -117,16 +117,17 @@ function isHistory(request: FuelRequest) {
 interface RequestListPageProps {
   role: DashboardRole
   mode: PageMode
+  userId?: string
 }
 
-export function RequestListPage({ role, mode }: RequestListPageProps) {
+export function RequestListPage({ role, mode, userId }: RequestListPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedFilter, setSelectedFilter] = useState<{
     title: string
     requests: FuelRequest[]
   } | null>(null)
-  const { requests, loading, error, total, refetch } = useRequests({ autoFetch: true, limit: 50 })
+  const { requests, loading, error, total, refetch } = useRequests({ autoFetch: true, limit: 50, userId })
   const copy = pageCopy[mode]
 
   const getDepartmentName = (req: FuelRequest) => {

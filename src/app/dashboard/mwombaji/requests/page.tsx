@@ -1,5 +1,7 @@
 import { RequestListPage } from '@/components/dashboard/RequestListPage'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Page() {
-  return <RequestListPage role="mwombaji" mode="mine" />
+  const { user } = useAuth()
+  return <RequestListPage role="mwombaji" mode="mine" userId={user?.id} />
 }

@@ -72,6 +72,7 @@ export default function AdminReportsPage() {
   } = useRequests({
     autoFetch: true,
     limit: 100,
+    userId: user?.id,
   })
 
   const report = useMemo(() => {
