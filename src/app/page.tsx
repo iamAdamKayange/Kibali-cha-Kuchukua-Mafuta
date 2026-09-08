@@ -370,7 +370,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-              â€œ{t.heroSubtitle}â€
+              {t.heroSubtitle}
             </p>
 
             {/* CTAs */}
