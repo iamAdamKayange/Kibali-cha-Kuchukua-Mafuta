@@ -18,9 +18,11 @@ import { formatTanzaniaDate, toTanzaniaIsoString } from '@/lib/dates'
 import { Sidebar } from '@/components/common/Sidebar'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { useAuth } from '@/contexts/AuthContext'
 import { useRequests } from '@/hooks/useRequests'
 
 export default function AdminReportsPage() {
+  const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedFilter, setSelectedFilter] = useState<{
     title: string
@@ -206,6 +208,7 @@ export default function AdminReportsPage() {
           user={{
             name: 'Msimamizi',
             role: 'Admin',
+            avatar: user?.avatar,
           }}
         />
 

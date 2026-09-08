@@ -7,6 +7,7 @@ import { Sidebar } from '@/components/common/Sidebar'
 import { Header } from '@/components/common/Header'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Toast } from '@/components/common/Toast'
+import { useAuth } from '@/contexts/AuthContext'
 import { api } from '@/lib/api'
 import {
   ORGANIZATION_CATEGORIES,
@@ -50,6 +51,7 @@ function departmentCategory(user: User) {
 }
 
 export default function AdminUsersPage() {
+  const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [users, setUsers] = useState<User[]>([])
   const [departments, setDepartments] = useState<DepartmentOption[]>([])
@@ -189,7 +191,7 @@ export default function AdminUsersPage() {
       <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} user={{ name: 'Msimamizi', role: 'Admin' }} />
+        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} user={{ name: 'Msimamizi', role: 'Admin', avatar: user?.avatar }} />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">

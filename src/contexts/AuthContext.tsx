@@ -28,6 +28,7 @@ export interface User {
   department?: string | { id: string; name: string }
   departmentId?: string
   phone?: string
+  avatar?: string
 }
 
 interface LoginResponse {
@@ -41,6 +42,7 @@ interface AuthContextType {
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  updateUser: (updatedUser: Partial<User>) => void
   isAuthenticated: boolean
 }
 
@@ -428,6 +430,23 @@ export function AuthProvider({
     }
   }
 
+  /**
+   * UPDATE USER
+   *
+   * Updates the current user's data in the global state.
+   * This is called after profile updates to ensure all components
+   * see the latest user data (including avatar changes).
+   */
+  const updateUser = useCallback((updatedUser: Partial<User>) => {
+    setUser(prevUser => {
+      if (!prevUser) return null
+      const newUser = { ...prevUser, ...updatedUser }
+      // Update localStorage with new user data
+      localStorage.setItem('user', JSON.stringify(newUser))
+      return newUser
+    })
+  }, [])
+
   return (
     <AuthContext.Provider
       value={{
@@ -435,6 +454,7 @@ export function AuthProvider({
         loading,
         login,
         logout,
+        updateUser,
         isAuthenticated: !!user,
       }}
     >

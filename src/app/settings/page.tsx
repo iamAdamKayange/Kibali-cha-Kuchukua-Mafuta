@@ -47,7 +47,7 @@ export default function SettingsPage() {
     <div className="flex h-screen bg-transparent">
       <Sidebar role={roleToSidebarRole(user.role) as any} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} user={{ name: getUserDisplayName(user), role: user.role }} />
+        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} user={{ name: getUserDisplayName(user), role: user.role, avatar: user.avatar }} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="mx-auto max-w-3xl">
             <div className="mb-6 flex items-center gap-4">

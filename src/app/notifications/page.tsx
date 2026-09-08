@@ -161,7 +161,7 @@ export default function NotificationsPage() {
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
       <Sidebar role={roleToSidebarRole(user.role) as any} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} user={{ name: getUserDisplayName(user), role: user.role }} />
+        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} user={{ name: getUserDisplayName(user), role: user.role, avatar: user.avatar }} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="mx-auto max-w-4xl">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

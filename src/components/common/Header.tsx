@@ -406,9 +406,19 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
               className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
               aria-label="Profile"
             >
-              <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
-              </div>
+              {user?.avatar ? (
+                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary-500">
+                  <img
+                    src={user.avatar}
+                    alt={user.name || 'Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                </div>
+              )}
               <ChevronDown className="w-4 h-4 text-gray-400 hidden sm:block" />
             </button>
 

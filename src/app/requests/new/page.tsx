@@ -34,7 +34,7 @@ export default function NewRequestPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header 
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-          user={{ name: getUserDisplayName(user), role: 'Mwombaji/Dereva' }}
+          user={{ name: getUserDisplayName(user), role: 'Mwombaji/Dereva', avatar: user?.avatar }}
         />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6">

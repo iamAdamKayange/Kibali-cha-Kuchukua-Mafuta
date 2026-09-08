@@ -7,8 +7,10 @@ import { UserRegistrationForm } from '@/components/admin/UserRegistrationForm'
 import { motion } from 'framer-motion'
 import { ArrowLeft, UserPlus } from 'lucide-react'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function AdminRegisterPage() {
+  const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
@@ -18,7 +20,7 @@ export default function AdminRegisterPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header 
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-          user={{ name: 'Msimamizi', role: 'Admin' }}
+          user={{ name: 'Msimamizi', role: 'Admin', avatar: user?.avatar }}
         />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6">

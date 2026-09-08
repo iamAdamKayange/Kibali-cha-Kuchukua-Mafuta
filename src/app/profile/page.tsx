@@ -48,7 +48,7 @@ function roleLabel(role?: string, t?: (key: string) => string) {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, updateUser } = useAuth()
   const { t } = useLanguage()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -85,10 +85,10 @@ export default function ProfilePage() {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       email: user.email || '',
-      phone: (user as any).phone || '',
-      avatar: (user as any).avatar || '',
+      phone: user.phone || '',
+      avatar: user.avatar || '',
     })
-    setAvatarPreview((user as any).avatar || '')
+    setAvatarPreview(user.avatar || '')
   }, [user])
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,9 +202,8 @@ export default function ProfilePage() {
     }
 
     if (response.data) {
-      localStorage.setItem('user', JSON.stringify(response.data))
-      // Force auth context to refresh
-      window.location.reload()
+      // Update global AuthContext state with new user data
+      updateUser(response.data)
     }
     setToast({ type: 'success', message: t('profile_updated') })
   }
@@ -246,7 +245,7 @@ export default function ProfilePage() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          user={{ name: getUserDisplayName(user), role: user.role }}
+          user={{ name: getUserDisplayName(user), role: user.role, avatar: user.avatar }}
         />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
