@@ -69,7 +69,6 @@ export default function ProfilePage() {
     confirmPassword: '',
   })
 
-  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -92,7 +91,7 @@ export default function ProfilePage() {
     setAvatarPreview((user as any).avatar || '')
   }, [user])
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -102,24 +101,80 @@ export default function ProfilePage() {
       return
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setToast({ type: 'error', message: 'Image size must be less than 2MB' })
+    // Increased limit for original image (will be compressed)
+    if (file.size > 10 * 1024 * 1024) {
+      setToast({ type: 'error', message: 'Image size must be less than 10MB (will be compressed to under 2MB)' })
       return
     }
-
-    setSelectedAvatar(file)
     
-    // Create preview
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string)
+    // Compress and resize the image
+    try {
+      const compressedImage = await compressImage(file)
+      setAvatarPreview(compressedImage)
+    } catch (error) {
+      setToast({ type: 'error', message: 'Failed to process image. Please try another image.' })
+      console.error('Image compression error:', error)
     }
-    reader.readAsDataURL(file)
+  }
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'))
+            return
+          }
+
+          // Calculate new dimensions (max 300x300 for profile picture)
+          const maxDimension = 300
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > maxDimension) {
+              height = (height * maxDimension) / width
+              width = maxDimension
+            }
+          } else {
+            if (height > maxDimension) {
+              width = (width * maxDimension) / height
+              height = maxDimension
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          // Draw resized image
+          ctx.drawImage(img, 0, 0, width, height)
+
+          // Compress to JPEG with quality 0.7 (reasonable quality)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7)
+          
+          // Verify compressed size is under 2MB
+          if (compressedDataUrl.length > 2000000) {
+            // If still too large, try lower quality
+            const lowerQualityDataUrl = canvas.toDataURL('image/jpeg', 0.5)
+            resolve(lowerQualityDataUrl)
+          } else {
+            resolve(compressedDataUrl)
+          }
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+        img.src = e.target?.result as string
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsDataURL(file)
+    })
   }
 
   const handleAvatarRemove = () => {
-    setSelectedAvatar(null)
     setAvatarPreview('')
     setProfileForm({ ...profileForm, avatar: '' })
     if (fileInputRef.current) {
@@ -131,22 +186,12 @@ export default function ProfilePage() {
     event.preventDefault()
     setSavingProfile(true)
 
-    // Convert avatar to base64 if selected
-    let avatarData = profileForm.avatar
-    if (selectedAvatar) {
-      const reader = new FileReader()
-      avatarData = await new Promise<string>((resolve) => {
-        reader.onloadend = () => resolve(reader.result as string)
-        reader.readAsDataURL(selectedAvatar)
-      })
-    }
-
     const response = await api.put('/users/profile', {
       firstName: profileForm.firstName.trim(),
       lastName: profileForm.lastName.trim(),
       email: profileForm.email.trim(),
       phone: profileForm.phone.trim() || null,
-      avatar: avatarData || null,
+      avatar: avatarPreview || null,
     })
 
     setSavingProfile(false)
