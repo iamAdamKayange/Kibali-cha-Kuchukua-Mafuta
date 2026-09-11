@@ -216,7 +216,11 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
       try {
         const response = await api.get<FuelRequest[]>(`/fuel-requests?interacted=true&limit=100`)
         if (response.success && response.data) {
-          const list = Array.isArray(response.data) ? response.data : []
+          const list = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray((response.data as unknown as { requests?: FuelRequest[] })?.requests)
+              ? (response.data as unknown as { requests: FuelRequest[] }).requests
+              : []
           setSelectedFilter({
             title: label,
             requests: list,
@@ -229,13 +233,57 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
       // Fallback to local filter if API fails
       filtered = requests.filter((r) => r.userInteraction !== null)
     } else if (label === 'Yanasubiri') {
-      // Filter by role-specific pending status
+      // Fetch pending requests from backend to get complete list
+      try {
+        const pendingStatus = getPendingStatusForRole(role)
+        const response = await api.get<FuelRequest[]>(`/fuel-requests?status=${pendingStatus}&limit=100`)
+        if (response.success && response.data) {
+          const list = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray((response.data as unknown as { requests?: FuelRequest[] })?.requests)
+              ? (response.data as unknown as { requests: FuelRequest[] }).requests
+              : []
+          setSelectedFilter({
+            title: label,
+            requests: list,
+          })
+          return
+        }
+      } catch (err) {
+        console.error('Failed to fetch pending requests:', err)
+      }
+      // Fallback to local filter if API fails
       const pendingStatus = getPendingStatusForRole(role)
       filtered = requests.filter((r) => r.status === pendingStatus)
     } else if (label === 'Yamekataliwa') {
+      // Backend only supports single status filter, so use local filtering
+      // for rejected (multiple statuses)
       filtered = requests.filter((request) => rejectedStatuses.includes(request.status))
     } else if (label === 'Yamekamilika' || label === 'Yameidhinishwa') {
+      // Backend only supports single status filter, so use local filtering
+      // for completed (multiple statuses)
       filtered = requests.filter((request) => completedStatuses.includes(request.status))
+    } else if (label === 'Maombi Yote') {
+      // Fetch all requests from backend to get complete list
+      try {
+        const response = await api.get<FuelRequest[]>(`/fuel-requests?limit=100`)
+        if (response.success && response.data) {
+          const list = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray((response.data as unknown as { requests?: FuelRequest[] })?.requests)
+              ? (response.data as unknown as { requests: FuelRequest[] }).requests
+              : []
+          setSelectedFilter({
+            title: label,
+            requests: list,
+          })
+          return
+        }
+      } catch (err) {
+        console.error('Failed to fetch all requests:', err)
+      }
+      // Fallback to current requests
+      filtered = requests
     } else if (label === 'Jumla ya Lita') {
       filtered = requests.filter((request) => litres(request) > 0)
     }
