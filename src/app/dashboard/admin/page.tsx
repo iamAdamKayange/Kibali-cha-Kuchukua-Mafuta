@@ -74,14 +74,14 @@ export default function AdminDashboard() {
     setLoading(false)
   }, [])
 
+  // WebSocket real-time updates handler
+  const handleRequestUpdate = useCallback((data: any) => {
+    console.log('[AdminDashboard] WebSocket request update received:', data)
+    fetchDashboard()
+  }, [fetchDashboard])
+
   useEffect(() => {
     fetchDashboard()
-
-    // WebSocket real-time updates
-    const handleRequestUpdate = useCallback((data: any) => {
-      console.log('[AdminDashboard] WebSocket request update received:', data)
-      fetchDashboard()
-    }, [])
 
     wsClient.on('request_updated', handleRequestUpdate)
     wsClient.on('request_approved', handleRequestUpdate)
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
       wsClient.off('request_approved', handleRequestUpdate)
       wsClient.off('request_rejected', handleRequestUpdate)
     }
-  }, [])
+  }, [fetchDashboard, handleRequestUpdate])
 
   const roleDistribution = useMemo(() => {
     const counts = users.reduce<Record<string, number>>((acc, item) => {

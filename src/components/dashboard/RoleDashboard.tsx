@@ -172,13 +172,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
   const Icon = page.icon
 
   // Fetch role-specific statistics
-  useEffect(() => {
-    if (user?.id && user?.role) {
-      fetchRoleStats()
-    }
-  }, [user?.id, user?.role])
-
-  const fetchRoleStats = async () => {
+  const fetchRoleStats = useCallback(async () => {
     try {
       const response = await api.get<RoleStats>('/fuel-requests/stats')
       if (response.success && response.data) {
@@ -187,16 +181,22 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     } catch (error) {
       console.error('[RoleDashboard] Failed to fetch stats:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (user?.id && user?.role) {
+      fetchRoleStats()
+    }
+  }, [user?.id, user?.role, fetchRoleStats])
 
   // WebSocket real-time updates
-  useEffect(() => {
-    const handleRequestUpdate = (data: any) => {
-      console.log('[RoleDashboard] WebSocket request update received:', data)
-      refetch()
-      fetchRoleStats() // Refresh statistics on workflow changes
-    }
+  const handleRequestUpdate = useCallback((data: any) => {
+    console.log('[RoleDashboard] WebSocket request update received:', data)
+    refetch()
+    fetchRoleStats() // Refresh statistics on workflow changes
+  }, [refetch, fetchRoleStats])
 
+  useEffect(() => {
     wsClient.on('request_updated', handleRequestUpdate)
     wsClient.on('request_approved', handleRequestUpdate)
     wsClient.on('request_rejected', handleRequestUpdate)
@@ -206,7 +206,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
       wsClient.off('request_approved', handleRequestUpdate)
       wsClient.off('request_rejected', handleRequestUpdate)
     }
-  }, [user?.id, user?.role])
+  }, [handleRequestUpdate])
 
   const handleStatCardClick = useCallback(async (label: string) => {
     let filtered = requests

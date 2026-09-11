@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Bell, CheckCheck, Trash2 } from 'lucide-react'
@@ -103,13 +103,13 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true)
     const response = await api.get<AppNotification[]>('/notifications?limit=50')
     if (response.success && response.data) setNotifications(response.data)
     else setToast({ type: 'error', message: response.error || 'Failed to fetch notifications' })
     setLoading(false)
-  }
+  }, [])
 
   useEffect(() => {
     if (user) fetchNotifications()
@@ -129,7 +129,7 @@ export default function NotificationsPage() {
     return () => {
       wsClient.off('notification', handleNotification)
     }
-  }, [user, notifications])
+  }, [user, notifications, fetchNotifications])
 
   const markAllRead = async () => {
     const response = await api.patch('/notifications/read-all', {})
