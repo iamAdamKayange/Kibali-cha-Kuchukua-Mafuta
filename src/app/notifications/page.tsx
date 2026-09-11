@@ -117,11 +117,8 @@ export default function NotificationsPage() {
     // WebSocket real-time notification updates
     const handleNotification = (data: any) => {
       console.log('[NotificationsPage] WebSocket notification received:', data)
-      // Only fetch if this is a new notification that we don't already have
-      const currentIds = new Set(notifications.map(n => n.id))
-      if (data.data?.id && !currentIds.has(data.data.id)) {
-        fetchNotifications()
-      }
+      // Fetch notifications on WebSocket event to stay in sync
+      fetchNotifications()
     }
 
     wsClient.on('notification', handleNotification)
@@ -129,7 +126,7 @@ export default function NotificationsPage() {
     return () => {
       wsClient.off('notification', handleNotification)
     }
-  }, [user, notifications, fetchNotifications])
+  }, [user, fetchNotifications])
 
   const markAllRead = async () => {
     const response = await api.patch('/notifications/read-all', {})
