@@ -23,6 +23,7 @@ interface RoleStats {
   rejected: number
   completed: number
   totalLitres: number
+  interacted?: number
 }
 
 type RoleDashboardKey = Exclude<WorkflowRole, 'admin'>
@@ -150,12 +151,13 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     requests: FuelRequest[]
   } | null>(null)
   const [roleDetailsOpen, setRoleDetailsOpen] = useState(false)
-  const [roleStats, setRoleStats] = useState({
+  const [roleStats, setRoleStats] = useState<RoleStats>({
     total: 0,
     pending: 0,
     rejected: 0,
     completed: 0,
-    totalLitres: 0
+    totalLitres: 0,
+    interacted: 0
   })
 
   const { requests, loading, error, total, refetch } = useRequests({ autoFetch: true, limit: 20, userId: user?.id, enableRealtime: true })
@@ -263,29 +265,11 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
       // Backend only supports single status filter, so use local filtering
       // for completed (multiple statuses)
       filtered = requests.filter((request) => completedStatuses.includes(request.status))
-    } else if (label === 'Maombi Yote') {
-      // Fetch all requests from backend to get complete list
-      try {
-        const response = await api.get<FuelRequest[]>(`/fuel-requests?limit=100`)
-        if (response.success && response.data) {
-          const list = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray((response.data as unknown as { requests?: FuelRequest[] })?.requests)
-              ? (response.data as unknown as { requests: FuelRequest[] }).requests
-              : []
-          setSelectedFilter({
-            title: label,
-            requests: list,
-          })
-          return
-        }
-      } catch (err) {
-        console.error('Failed to fetch all requests:', err)
-      }
-      // Fallback to current requests
-      filtered = requests
     } else if (label === 'Jumla ya Lita') {
       filtered = requests.filter((request) => litres(request) > 0)
+    } else {
+      // Maombi Yote - use current requests which match the stats
+      filtered = requests
     }
 
     setSelectedFilter({
@@ -321,7 +305,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
 
   // Add interacted requests stat for approver roles
   if (['mkuu-idara', 'afisa-usafirishaji', 'ada-dahrm', 'ununuzi-ugavi'].includes(role)) {
-    const interactedCount = requests.filter((r) => r.userInteraction !== null).length
+    const interactedCount = roleStats.interacted || 0
     dashboardStats.push({ label: 'Zilizoshughulikiwa', value: interactedCount, icon: ListChecks, color: 'text-purple-500' })
   }
 
