@@ -13,8 +13,17 @@ import { getUserDisplayName, useAuth } from '@/contexts/AuthContext'
 import { formatTanzaniaDate, toTanzaniaIsoString } from '@/lib/dates'
 import { useRequests } from '@/hooks/useRequests'
 import { wsClient } from '@/lib/websocket'
+import { api } from '@/lib/api'
 import type { FuelRequest } from '@/types'
 import { WorkflowGuide, type WorkflowRole } from './WorkflowGuide'
+
+interface RoleStats {
+  total: number
+  pending: number
+  rejected: number
+  completed: number
+  totalLitres: number
+}
 
 type RoleDashboardKey = Exclude<WorkflowRole, 'admin'>
 
@@ -141,6 +150,13 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     requests: FuelRequest[]
   } | null>(null)
   const [roleDetailsOpen, setRoleDetailsOpen] = useState(false)
+  const [roleStats, setRoleStats] = useState({
+    total: 0,
+    pending: 0,
+    rejected: 0,
+    completed: 0,
+    totalLitres: 0
+  })
 
   const { requests, loading, error, total, refetch } = useRequests({ autoFetch: true, limit: 20, userId: user?.id, enableRealtime: true })
 
@@ -155,11 +171,30 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
   const page = copy[role]
   const Icon = page.icon
 
+  // Fetch role-specific statistics
+  useEffect(() => {
+    if (user?.id && user?.role) {
+      fetchRoleStats()
+    }
+  }, [user?.id, user?.role])
+
+  const fetchRoleStats = async () => {
+    try {
+      const response = await api.get<RoleStats>('/fuel-requests/stats')
+      if (response.success && response.data) {
+        setRoleStats(response.data)
+      }
+    } catch (error) {
+      console.error('[RoleDashboard] Failed to fetch stats:', error)
+    }
+  }
+
   // WebSocket real-time updates
   useEffect(() => {
     const handleRequestUpdate = (data: any) => {
       console.log('[RoleDashboard] WebSocket request update received:', data)
       refetch()
+      fetchRoleStats() // Refresh statistics on workflow changes
     }
 
     wsClient.on('request_updated', handleRequestUpdate)
@@ -171,26 +206,24 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
       wsClient.off('request_approved', handleRequestUpdate)
       wsClient.off('request_rejected', handleRequestUpdate)
     }
-  }, []) // Removed refetch dependency to prevent infinite loops
+  }, [user?.id, user?.role])
 
   const handleStatCardClick = useCallback((label: string) => {
     let filtered = requests
     if (label === 'Yanasubiri') {
-      if (role === 'ada-dahrm') {
-        filtered = requests.filter((r) => r.status === 'PENDING_DA_APPROVAL')
-      } else {
-        filtered = requests.filter(isPending)
-      }
+      // Filter by role-specific pending status
+      const pendingStatus = getPendingStatusForRole(role)
+      filtered = requests.filter((r) => r.status === pendingStatus)
     } else if (label === 'Yamekataliwa') {
       filtered = requests.filter((request) => rejectedStatuses.includes(request.status))
     } else if (label === 'Yamekamilika' || label === 'Yameidhinishwa') {
-      if (role === 'ada-dahrm') {
-        filtered = requests.filter((r) => r.status === 'FULLY_APPROVED')
-      } else {
-        filtered = requests.filter((request) => completedStatuses.includes(request.status))
-      }
+      filtered = requests.filter((request) => completedStatuses.includes(request.status))
     } else if (label === 'Jumla ya Lita') {
       filtered = requests.filter((request) => litres(request) > 0)
+    } else if (label === 'Zilizoshughulikiwa') {
+      // Show requests user has interacted with (has approval record)
+      // This is separate from current pending work
+      filtered = requests.filter((r) => r.userInteraction !== null)
     }
 
     setSelectedFilter({
@@ -199,6 +232,17 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     })
   }, [requests, role])
 
+  function getPendingStatusForRole(role: RoleDashboardKey): string {
+    const statusMap: Record<RoleDashboardKey, string> = {
+      'mwombaji': 'PENDING_HEAD_APPROVAL',
+      'mkuu-idara': 'PENDING_HEAD_APPROVAL',
+      'afisa-usafirishaji': 'PENDING_TRANSPORT_APPROVAL',
+      'ada-dahrm': 'PENDING_DA_APPROVAL',
+      'ununuzi-ugavi': 'PENDING_FUEL_ISSUANCE',
+    }
+    return statusMap[role] || 'PENDING_HEAD_APPROVAL'
+  }
+
   // ADA needs to see both pending and fully approved requests
   const pending = useMemo(() => {
     if (role === 'ada-dahrm') {
@@ -206,20 +250,25 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     }
     return requests.filter(isPending).slice(0, 6)
   }, [requests, role])
-  const stats = [
-    { label: 'Maombi Yote', value: total || requests.length, icon: FileText, color: 'text-primary-500' },
-    { label: 'Yanasubiri', value: requests.filter(isPending).length, icon: Clock, color: 'text-warning-500' },
-    { label: 'Yamekataliwa', value: requests.filter((request) => rejectedStatuses.includes(request.status)).length, icon: XCircle, color: 'text-danger-500' },
-    { label: 'Jumla ya Lita', value: requests.reduce((sum, request) => sum + litres(request), 0), icon: Fuel, color: 'text-blue-500' },
+  const dashboardStats = [
+    { label: 'Maombi Yote', value: roleStats.total, icon: FileText, color: 'text-primary-500' },
+    { label: 'Yanasubiri', value: roleStats.pending, icon: Clock, color: 'text-warning-500' },
+    { label: 'Yamekataliwa', value: roleStats.rejected, icon: XCircle, color: 'text-danger-500' },
+    { label: 'Jumla ya Lita', value: roleStats.totalLitres, icon: Fuel, color: 'text-blue-500' },
   ]
 
+  // Add interacted requests stat for approver roles
+  if (['mkuu-idara', 'afisa-usafirishaji', 'ada-dahrm', 'ununuzi-ugavi'].includes(role)) {
+    const interactedCount = requests.filter((r) => r.userInteraction !== null).length
+    dashboardStats.push({ label: 'Zilizoshughulikiwa', value: interactedCount, icon: ListChecks, color: 'text-purple-500' })
+  }
+
   if (role === 'mwombaji') {
-    stats[2] = { label: 'Yamekamilika', value: requests.filter((request) => completedStatuses.includes(request.status)).length, icon: CheckCircle, color: 'text-success-500' }
+    dashboardStats[2] = { label: 'Yamekamilika', value: roleStats.completed, icon: CheckCircle, color: 'text-success-500' }
   }
 
   if (role === 'ada-dahrm') {
-    stats[1] = { label: 'Yanasubiri', value: requests.filter((r) => r.status === 'PENDING_DA_APPROVAL').length, icon: Clock, color: 'text-warning-500' }
-    stats[2] = { label: 'Yameidhinishwa', value: requests.filter((r) => r.status === 'FULLY_APPROVED').length, icon: CheckCircle, color: 'text-success-500' }
+    dashboardStats[2] = { label: 'Yameidhinishwa', value: roleStats.completed, icon: CheckCircle, color: 'text-success-500' }
   }
 
   return (
@@ -290,7 +339,7 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
           <WorkflowGuide currentRole={role} />
 
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {stats.map((stat, index) => (
+            {dashboardStats.map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 16 }}

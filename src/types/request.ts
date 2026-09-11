@@ -7,6 +7,12 @@ export interface RejectionDetails {
   rejectedAt: string | Date
 }
 
+export interface UserInteraction {
+  stage: string
+  action: 'approved' | 'rejected'
+  at: string | Date
+}
+
 export interface FuelRequest {
   id: string
   requestNumber: string
@@ -47,6 +53,8 @@ export interface FuelRequest {
   currentStage: 'mwombaji' | 'mkuu-idara' | 'afisa-usafirishaji' | 'ada-dahrm' | 'ununuzi-ugavi' | 'completed' | string
   rejectionDetails?: RejectionDetails
   rejectionReason?: string
+  userInteraction?: UserInteraction
+  approvals?: any[]
   
   sectionB?: {
     approved: boolean
