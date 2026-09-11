@@ -15,6 +15,7 @@ import {
   unregisterDevicePushToken,
   canReceivePushNotifications,
 } from '@/lib/pushNotifications'
+import { wsClient } from '@/lib/websocket'
 
 export interface User {
   id: string
@@ -44,6 +45,7 @@ interface AuthContextType {
   logout: () => Promise<void>
   updateUser: (updatedUser: Partial<User>) => void
   isAuthenticated: boolean
+  onRequestUpdate: () => void
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -73,6 +75,7 @@ export function AuthProvider({
     if (typeof window === 'undefined') return true
     return Boolean(getCookie('token') || localStorage.getItem('token'))
   })
+  const [requestUpdateTrigger, setRequestUpdateTrigger] = useState(0)
 
   /**
    * Handle authentication invalidation from API layer
@@ -93,6 +96,17 @@ export function AuthProvider({
   useEffect(() => {
     api.registerAuthInvalidatedCallback(handleAuthInvalidated)
   }, [handleAuthInvalidated])
+
+  /**
+   * Register token refresh callback to reconnect WebSocket with new token
+   */
+  useEffect(() => {
+    const handleTokenRefreshed = (newToken: string) => {
+      console.log('[AuthContext] Token refreshed, reconnecting WebSocket')
+      wsClient.reconnectWithNewToken(newToken)
+    }
+    api.registerTokenRefreshedCallback(handleTokenRefreshed)
+  }, [])
 
   /**
    * RESTORE SESSION
@@ -233,9 +247,18 @@ export function AuthProvider({
 
     if (!user?.id) {
       void unregisterDevicePushToken()
+      wsClient.disconnect()
       return
     }
 
+    // Connect WebSocket for real-time workflow synchronization
+    // All authenticated users need WebSocket for request updates, not just push notifications
+    const token = getCookie('token') || localStorage.getItem('token')
+    if (token) {
+      wsClient.connect(token)
+    }
+
+    // Push notifications are role-restricted
     if (!canReceivePushNotifications(user.role)) {
       void unregisterDevicePushToken()
       return
@@ -447,6 +470,16 @@ export function AuthProvider({
     })
   }, [])
 
+  /**
+   * REQUEST UPDATE TRIGGER
+   *
+   * Trigger a request list update across all components.
+   * This is called when WebSocket receives notification about request changes.
+   */
+  const onRequestUpdate = useCallback(() => {
+    setRequestUpdateTrigger(prev => prev + 1)
+  }, [])
+
   return (
     <AuthContext.Provider
       value={{
@@ -456,6 +489,7 @@ export function AuthProvider({
         logout,
         updateUser,
         isAuthenticated: !!user,
+        onRequestUpdate,
       }}
     >
       {children}

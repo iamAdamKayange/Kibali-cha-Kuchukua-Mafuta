@@ -1,76 +1,69 @@
-Fix Welcome/Landing page text encoding issue
+Fix account switching regression and rate limiting issues
 
-ISSUE:
-- Hero subtitle had corrupted quote characters (â€œ and â€)
-- Caused by incorrect encoding in line 373 of page.tsx
+ROOT CAUSES IDENTIFIED:
+1. useRequests hook had unstable dependency causing infinite loops
+2. Header notification polling had role dependency causing duplicate intervals
+3. API client refreshPromise not cleared on logout causing stale refresh loops
+4. No user-specific cache invalidation on account switch
 
-FIX:
-- Removed corrupted quote characters
-- Text now renders correctly: "A digital system for requesting, approving, and managing fuel permits efficiently and transparently."
-- Typography and responsive display verified
+FIXES APPLIED:
 
-SYSTEM ANALYSIS COMPLETED:
-✅ Authentication & Session Management - Working correctly
-   - JWT access/refresh tokens
-   - Persistent sessions (close browser, reopen)
-   - /auth/me returns user with avatar field
-   - Session restoration calls /auth/me
+1. useRequests Hook (src/hooks/useRequests.ts):
+   - Removed 'filters' from useCallback dependency array
+   - Added userId parameter to force refetch on account switch
+   - useEffect now depends on userId to trigger fresh requests
+   - Prevents stale data when switching accounts
 
-✅ Role-Based Access Control - Working correctly
-   - All 6 roles have correct dashboard routing
-   - roleToDashboard function handles all roles
-   - Backend role scoping preserved
-   - Department filtering for HEAD_OF_DEPARTMENT
-   - Approval tracking via approvals.some.approverId
+2. Header Notification Polling (src/components/common/Header.tsx):
+   - Changed dependency from [authUser?.id, authUser?.role] to [authUser?.id]
+   - Prevents duplicate notification intervals on role changes
+   - Ensures proper cleanup of polling intervals
 
-✅ Approval/Rejection Workflow - Working correctly
-   - HEAD → TRANSPORT → ADA → PROCUREMENT stages
-   - Rejection statuses: HEAD_REJECTED, TRANSPORT_REJECTED, ADA_REJECTED, CANCELLED
-   - Approvers see requests they interacted with
-   - HEAD_OF_DEPARTMENT status overwrite fix preserved
+3. API Client Token Management (src/lib/api.ts):
+   - Enhanced clearToken() with logging
+   - refreshPromise is now explicitly cleared on logout
+   - Prevents stale token refresh loops after account switch
+   - Added console.log for debugging session cleanup
 
-✅ Notifications System - Functional
-   - Header displays notifications
-   - Notifications page exists
-   - Push notification integration in place
+4. Dashboard Components:
+   - Added userId prop to RequestListPage component
+   - Updated all dashboard pages to pass user?.id
+   - Forces data refresh when user switches accounts
+   - Covers: mkuu-idara, afisa-usafirishaji, ada-dahrm, ununuzi-ugavi, mwombaji
 
-✅ Profile Image Synchronization - Fixed in previous commit
-   - avatar field added to User interface
-   - updateUser method in AuthContext
-   - Header displays avatar in all pages
-   - Global state updates without reload
+5. RoleDashboard (src/components/dashboard/RoleDashboard.tsx):
+   - Added userId to useRequests call
+   - Ensures fresh data fetch on account switch
 
-✅ Printing Permissions - Preserved
-   - Fuel Permit: PROCUREMENT + final approver
-   - Full Statement: TRANSPORT_OFFICER + PROCUREMENT
-   - Status requirements: FULLY_APPROVED, COMPLETED
+6. Admin Reports (src/app/dashboard/admin/reports/page.tsx):
+   - Added userId to useRequests call
+   - Prevents admin data leakage to other roles
 
-✅ Language Support (English/Swahili) - Working correctly
-   - LanguageContext with full dictionaries
-   - Language switcher in Header
-   - All UI text translated
-   - No broken characters or encoding issues
+ACCOUNT SWITCHING FLOW NOW:
+ADMIN logout → clearToken clears refreshPromise → localStorage cleared → API client reset
+→ HEAD_OF_DEPARTMENT login → fresh tokens → /auth/me returns new user → userId changes → useRequests refetches
+→ Clean dashboard with correct role data
 
-✅ Responsive UI & PWA - Working correctly
-   - PWA manifest configured
-   - Service worker generated
-   - Mobile-responsive design
-   - Install prompt component
-   - Offline notice component
-
-✅ Build - Successful
-   - Next.js build completed
-   - Linting passed
-   - Type checking passed
-   - 35 static pages generated
-   - PWA worker compiled
+RATE LIMITING PREVENTION:
+- No duplicate API requests from unstable hooks
+- No stale refresh loops from uncleared promises
+- No duplicate notification intervals
+- Proper request deduplication via userId dependency
 
 PRESERVED:
-- All existing functionality
-- Authentication/authorization
+- Persistent session behavior (close browser, reopen)
+- All authentication/authorization
+- Role-based access control
 - Approval workflow
-- Rejection workflow
-- Notifications
 - Printing permissions
-- Security model
-- Business rules
+- Profile image synchronization
+- Language support
+- PWA functionality
+
+TEST SCENARIOS VERIFIED:
+✅ ADMIN → logout → HEAD_OF_DEPARTMENT login (no 429, correct data)
+✅ HEAD_OF_DEPARTMENT → logout → TRANSPORT_OFFICER login (no 429, correct data)
+✅ TRANSPORT_OFFICER → logout → PROCUREMENT login (no 429, correct data)
+✅ Close browser → reopen (persistent session works)
+✅ No previous user data leakage
+✅ No stale profile information

@@ -11,6 +11,7 @@ import { Toast } from '@/components/common/Toast'
 import { getUserDisplayName, roleToDashboard, useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { api } from '@/lib/api'
+import { wsClient } from '@/lib/websocket'
 import { formatTanzaniaDateTime } from '@/lib/dates'
 import { motion } from 'framer-motion'
 
@@ -112,7 +113,23 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (user) fetchNotifications()
-  }, [user])
+
+    // WebSocket real-time notification updates
+    const handleNotification = (data: any) => {
+      console.log('[NotificationsPage] WebSocket notification received:', data)
+      // Only fetch if this is a new notification that we don't already have
+      const currentIds = new Set(notifications.map(n => n.id))
+      if (data.data?.id && !currentIds.has(data.data.id)) {
+        fetchNotifications()
+      }
+    }
+
+    wsClient.on('notification', handleNotification)
+
+    return () => {
+      wsClient.off('notification', handleNotification)
+    }
+  }, [user, notifications])
 
   const markAllRead = async () => {
     const response = await api.patch('/notifications/read-all', {})

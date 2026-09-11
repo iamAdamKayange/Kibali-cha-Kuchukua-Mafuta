@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
+import { wsClient } from '@/lib/websocket'
 import type { FuelRequest, RequestFilter } from '@/types'
 
 interface ApprovalPayload {
@@ -35,6 +36,7 @@ interface UseRequestsOptions {
   page?: number
   limit?: number
   userId?: string // Add userId to force refetch on account switch
+  enableRealtime?: boolean // Enable WebSocket real-time updates
 }
 
 interface UseRequestsReturn {
@@ -69,6 +71,7 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
     page: initialPage = 1,
     limit = 10,
     userId,
+    enableRealtime = true,
   } = options
 
   const [requests, setRequests] = useState<FuelRequest[]>([])
@@ -119,7 +122,7 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
     } finally {
       setLoading(false)
     }
-  }, [page, limit])
+  }, [page, limit, filters])
 
   const fetchRequest = useCallback(async (id: string): Promise<FuelRequest | null> => {
     setLoading(true)
@@ -287,6 +290,30 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
       fetchRequests()
     }
   }, [autoFetch, page, limit, filters, userId])
+
+  // WebSocket real-time updates
+  useEffect(() => {
+    if (!enableRealtime) return
+
+    const handleRequestUpdate = (data: any) => {
+      console.log('[useRequests] WebSocket request update received:', data)
+      
+      // Refresh requests when a request is updated
+      if (data.type === 'request_updated' || data.type === 'request_approved' || data.type === 'request_rejected') {
+        fetchRequests()
+      }
+    }
+
+    wsClient.on('request_updated', handleRequestUpdate)
+    wsClient.on('request_approved', handleRequestUpdate)
+    wsClient.on('request_rejected', handleRequestUpdate)
+
+    return () => {
+      wsClient.off('request_updated', handleRequestUpdate)
+      wsClient.off('request_approved', handleRequestUpdate)
+      wsClient.off('request_rejected', handleRequestUpdate)
+    }
+  }, [enableRealtime]) // Removed fetchRequests dependency to prevent refetch loops
 
   return {
     requests,

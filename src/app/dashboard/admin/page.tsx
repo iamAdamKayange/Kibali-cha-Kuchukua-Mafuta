@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -12,6 +12,7 @@ import { WorkflowGuide } from '@/components/dashboard/WorkflowGuide'
 import { getUserDisplayName, useAuth } from '@/contexts/AuthContext'
 import { formatTanzaniaDate, toTanzaniaIsoString } from '@/lib/dates'
 import { api } from '@/lib/api'
+import { wsClient } from '@/lib/websocket'
 import type { FuelRequest, User } from '@/types'
 
 interface AdminStats {
@@ -54,34 +55,42 @@ export default function AdminDashboard() {
   } | null>(null)
   const { user } = useAuth()
 
+  const fetchDashboard = useCallback(async () => {
+    setLoading(true)
+    setError('')
+
+    const [statsResponse, usersResponse, requestsResponse] = await Promise.all([
+      api.get<AdminStats>('/admin/stats'),
+      api.get<User[]>('/admin/users?limit=8'),
+      api.get<FuelRequest[]>('/fuel-requests?limit=100'),
+    ])
+
+    setStats(statsResponse.success && statsResponse.data ? statsResponse.data : emptyStats)
+    if (!statsResponse.success) setError(statsResponse.error || 'Failed to load admin statistics')
+
+    if (usersResponse.success && usersResponse.data) setUsers(usersResponse.data)
+    if (requestsResponse.success && requestsResponse.data) setRequests(requestsResponse.data)
+
+    setLoading(false)
+  }, [])
+
   useEffect(() => {
-    let mounted = true
-
-    async function fetchDashboard() {
-      setLoading(true)
-      setError('')
-
-      const [statsResponse, usersResponse, requestsResponse] = await Promise.all([
-        api.get<AdminStats>('/admin/stats'),
-        api.get<User[]>('/admin/users?limit=8'),
-        api.get<FuelRequest[]>('/fuel-requests?limit=100'),
-      ])
-
-      if (!mounted) return
-
-      if (statsResponse.success && statsResponse.data) setStats(statsResponse.data)
-      else setError(statsResponse.error || 'Failed to load admin statistics')
-
-      if (usersResponse.success && usersResponse.data) setUsers(usersResponse.data)
-      if (requestsResponse.success && requestsResponse.data) setRequests(requestsResponse.data)
-
-      setLoading(false)
-    }
-
     fetchDashboard()
 
+    // WebSocket real-time updates
+    const handleRequestUpdate = useCallback((data: any) => {
+      console.log('[AdminDashboard] WebSocket request update received:', data)
+      fetchDashboard()
+    }, [])
+
+    wsClient.on('request_updated', handleRequestUpdate)
+    wsClient.on('request_approved', handleRequestUpdate)
+    wsClient.on('request_rejected', handleRequestUpdate)
+
     return () => {
-      mounted = false
+      wsClient.off('request_updated', handleRequestUpdate)
+      wsClient.off('request_approved', handleRequestUpdate)
+      wsClient.off('request_rejected', handleRequestUpdate)
     }
   }, [])
 

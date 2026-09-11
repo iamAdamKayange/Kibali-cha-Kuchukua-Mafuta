@@ -43,6 +43,8 @@ export class ApiClient {
   private csrfSecret: string | null = null
   private refreshPromise: Promise<void> | null = null // Track ongoing refresh
   private authInvalidatedCallback: (() => void) | null = null // Callback for auth invalidation
+  private tokenRefreshedCallback: ((newToken: string) => void) | null = null // Callback for token refresh
+  private pendingRequests: Map<string, Promise<ApiResponse<any>>> = new Map() // Request deduplication
 
   private constructor() {
     if (typeof window !== 'undefined') {
@@ -97,6 +99,13 @@ export class ApiClient {
   }
 
   /**
+   * Register callback for token refresh
+   */
+  registerTokenRefreshedCallback(callback: (newToken: string) => void): void {
+    this.tokenRefreshedCallback = callback
+  }
+
+  /**
    * Trigger auth invalidation callback
    */
   private notifyAuthInvalidated() {
@@ -105,6 +114,19 @@ export class ApiClient {
         this.authInvalidatedCallback()
       } catch (error) {
         console.error('[API] Error in auth invalidation callback:', error)
+      }
+    }
+  }
+
+  /**
+   * Trigger token refresh callback
+   */
+  private notifyTokenRefreshed(newToken: string) {
+    if (this.tokenRefreshedCallback) {
+      try {
+        this.tokenRefreshedCallback(newToken)
+      } catch (error) {
+        console.error('[API] Error in token refresh callback:', error)
       }
     }
   }
@@ -135,36 +157,46 @@ export class ApiClient {
 
     console.log('[API] Attempting to refresh access token')
 
-    const response = await fetch(`${API_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
-    })
+    try {
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      })
 
-    if (!response.ok) {
-      throw new Error('Refresh token failed')
+      if (!response.ok) {
+        throw new Error('Refresh token failed')
+      }
+
+      const data = await response.json()
+      if (!data.success || !data.data?.accessToken) {
+        throw new Error('Refresh token response invalid')
+      }
+
+      const { accessToken, refreshToken: newRefreshToken } = data.data
+
+      // Update tokens
+      this.token = accessToken
+      localStorage.setItem('token', accessToken)
+      setCookie('token', accessToken, 7)
+
+      if (newRefreshToken) {
+        localStorage.setItem('refreshToken', newRefreshToken)
+        setCookie('refreshToken', newRefreshToken, 30)
+      }
+
+      console.log('[API] Access token refreshed successfully')
+
+      // Notify WebSocket to reconnect with new token
+      this.notifyTokenRefreshed(accessToken)
+    } catch (error) {
+      console.error('[API] Token refresh failed:', error)
+      // Clear refresh promise to allow retry attempts
+      this.refreshPromise = null
+      throw error
     }
-
-    const data = await response.json()
-    if (!data.success || !data.data?.accessToken) {
-      throw new Error('Refresh token response invalid')
-    }
-
-    const { accessToken, refreshToken: newRefreshToken } = data.data
-
-    // Update tokens
-    this.token = accessToken
-    localStorage.setItem('token', accessToken)
-    setCookie('token', accessToken, 7)
-
-    if (newRefreshToken) {
-      localStorage.setItem('refreshToken', newRefreshToken)
-      setCookie('refreshToken', newRefreshToken, 30)
-    }
-
-    console.log('[API] Access token refreshed successfully')
   }
 
   /**
@@ -197,6 +229,15 @@ export class ApiClient {
   }
 
   /**
+   * Generate unique request key for deduplication
+   */
+  private generateRequestKey(endpoint: string, options: RequestInit): string {
+    const method = (options.method || 'GET').toUpperCase()
+    const body = options.body ? `_${typeof options.body === 'string' ? options.body : JSON.stringify(options.body)}` : ''
+    return `${method}_${endpoint}${body}`
+  }
+
+  /**
    * Main API request handler
    */
   private async request<T>(
@@ -215,6 +256,17 @@ export class ApiClient {
         error:
           'Hakuna muunganisho wa intaneti. Tafadhali jaribu tena mtandao utakaporudi.',
       }
+    }
+
+    /*
+     * Request deduplication for GET requests to prevent duplicate calls
+     */
+    const requestKey = this.generateRequestKey(endpoint, options)
+    const isGetRequest = (options.method || 'GET').toUpperCase() === 'GET'
+    
+    if (isGetRequest && this.pendingRequests.has(requestKey)) {
+      console.log('[API] Deduplicating duplicate GET request:', requestKey)
+      return this.pendingRequests.get(requestKey) as Promise<ApiResponse<T>>
     }
 
     /*
@@ -267,59 +319,145 @@ export class ApiClient {
         )
       : null
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        signal: options.signal || controller?.signal,
-      })
+    /*
+     * Create request promise for deduplication
+     */
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers,
+          signal: options.signal || controller?.signal,
+        })
 
-      /*
-       * Capture CSRF token from response header
-       */
-      const csrfTokenFromResponse = response.headers.get('X-CSRF-Token')
-      const csrfSecretFromResponse = response.headers.get('X-CSRF-Secret')
-      if (csrfTokenFromResponse) {
-        this.setCSRFToken(csrfTokenFromResponse, csrfSecretFromResponse || undefined)
-      }
-
-      /*
-       * Handle empty responses
-       */
-      const contentType =
-        response.headers.get('content-type') || ''
-
-      let data: unknown = null
-
-      if (contentType.includes('application/json')) {
-        try {
-          data = await response.json()
-        } catch {
-          data = null
+        /*
+         * Capture CSRF token from response header
+         */
+        const csrfTokenFromResponse = response.headers.get('X-CSRF-Token')
+        const csrfSecretFromResponse = response.headers.get('X-CSRF-Secret')
+        if (csrfTokenFromResponse) {
+          this.setCSRFToken(csrfTokenFromResponse, csrfSecretFromResponse || undefined)
         }
-      } else {
-        try {
-          data = await response.text()
-        } catch {
-          data = null
+
+        /*
+         * Handle empty responses
+         */
+        const contentType =
+          response.headers.get('content-type') || ''
+
+        let data: unknown = null
+
+        if (contentType.includes('application/json')) {
+          try {
+            data = await response.json()
+          } catch {
+            data = null
+          }
+        } else {
+          try {
+            data = await response.text()
+          } catch {
+            data = null
+          }
         }
-      }
 
-      /*
-       * Handle unauthorized request
-       *
-       * IMPORTANT:
-       * Do not automatically redirect here.
-       * AuthContext should control logout/navigation.
-       * 
-       * Instead, attempt to refresh the access token.
-       */
-      if (response.status === 401) {
-        console.log('[API] Received 401, attempting token refresh')
+        /*
+         * Handle unauthorized request
+         *
+         * IMPORTANT:
+         * Do not automatically redirect here.
+         * AuthContext should control logout/navigation.
+         * 
+         * Instead, attempt to refresh the access token.
+         */
+        if (response.status === 401) {
+          console.log('[API] Received 401, attempting token refresh')
 
-        // If a refresh is already in progress, wait for it
-        if (this.refreshPromise) {
+          // If a refresh is already in progress, wait for it
+          if (this.refreshPromise) {
+            await this.refreshPromise
+            // Retry the original request with new token
+            const retryHeaders = new Headers(options.headers)
+            retryHeaders.set('Content-Type', 'application/json')
+            if (this.token) {
+              retryHeaders.set('Authorization', `Bearer ${this.token}`)
+            }
+            
+            const retryResponse = await fetch(url, {
+              ...options,
+              headers: retryHeaders,
+              signal: options.signal || controller?.signal,
+            })
+            
+            // Capture CSRF token from retry response
+            const csrfTokenFromRetry = retryResponse.headers.get('X-CSRF-Token')
+            const csrfSecretFromRetry = retryResponse.headers.get('X-CSRF-Secret')
+            if (csrfTokenFromRetry) {
+              this.setCSRFToken(csrfTokenFromRetry, csrfSecretFromRetry || undefined)
+            }
+            
+            // Process retry response
+            const retryContentType = retryResponse.headers.get('content-type') || ''
+            let retryData: unknown = null
+            
+            if (retryContentType.includes('application/json')) {
+              try {
+                retryData = await retryResponse.json()
+              } catch {
+                retryData = null
+              }
+            } else {
+              try {
+                retryData = await retryResponse.text()
+              } catch {
+                retryData = null
+              }
+            }
+            
+            if (retryResponse.ok) {
+              if (typeof retryData === 'object' && retryData !== null && 'success' in retryData) {
+                return retryData as ApiResponse<T>
+              }
+              return {
+                success: true,
+                data: retryData as T,
+              }
+            } else if (retryResponse.status === 401) {
+              // If retry still returns 401, clear session and return error
+              console.error('[API] Retry still returned 401, clearing session')
+              this.clearAuthentication()
+              return {
+                success: false,
+                error: 'Session expired. Please login again.',
+              }
+            } else {
+              return {
+                success: false,
+                error: errorFromPayload(retryData, 'Request failed after refresh'),
+              }
+            }
+          }
+
+          // Start a new refresh operation
+          this.refreshPromise = this.refreshAccessToken()
+            .then(() => {
+              console.log('[API] Refresh completed successfully')
+              this.refreshPromise = null
+            })
+            .catch((error) => {
+              console.error('[API] Refresh failed:', error)
+              this.refreshPromise = null
+              // Clear session and notify AuthContext on refresh failure
+              this.clearAuthentication()
+              // Force redirect to login
+              if (typeof window !== 'undefined') {
+                window.location.href = '/login'
+              }
+              throw error
+            })
+
           await this.refreshPromise
+
           // Retry the original request with new token
           const retryHeaders = new Headers(options.headers)
           retryHeaders.set('Content-Type', 'application/json')
@@ -366,6 +504,14 @@ export class ApiClient {
               success: true,
               data: retryData as T,
             }
+          } else if (retryResponse.status === 401) {
+            // If retry still returns 401, clear session and return error
+            console.error('[API] Retry still returned 401, clearing session')
+            this.clearAuthentication()
+            return {
+              success: false,
+              error: 'Session expired. Please login again.',
+            }
           } else {
             return {
               success: false,
@@ -374,150 +520,88 @@ export class ApiClient {
           }
         }
 
-        // Start a new refresh operation
-        this.refreshPromise = this.refreshAccessToken()
-          .then(() => {
-            console.log('[API] Refresh completed successfully')
-            this.refreshPromise = null
-          })
-          .catch((error) => {
-            console.error('[API] Refresh failed:', error)
-            this.refreshPromise = null
-            // Clear session and notify AuthContext on refresh failure
-            this.clearAuthentication()
-            // Force redirect to login
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login'
-            }
-            throw error
-          })
+        /*
+         * Handle other HTTP errors
+         */
+        if (!response.ok) {
+          let errorMessage =
+            'Request failed'
 
-        await this.refreshPromise
+          if (typeof data === 'object' && data !== null) {
+            errorMessage = errorFromPayload(data, errorMessage)
+          } else if (
+            typeof data === 'string' &&
+            data.trim()
+          ) {
+            errorMessage = data
+          }
 
-        // Retry the original request with new token
-        const retryHeaders = new Headers(options.headers)
-        retryHeaders.set('Content-Type', 'application/json')
-        if (this.token) {
-          retryHeaders.set('Authorization', `Bearer ${this.token}`)
-        }
-        
-        const retryResponse = await fetch(url, {
-          ...options,
-          headers: retryHeaders,
-          signal: options.signal || controller?.signal,
-        })
-        
-        // Capture CSRF token from retry response
-        const csrfTokenFromRetry = retryResponse.headers.get('X-CSRF-Token')
-        const csrfSecretFromRetry = retryResponse.headers.get('X-CSRF-Secret')
-        if (csrfTokenFromRetry) {
-          this.setCSRFToken(csrfTokenFromRetry, csrfSecretFromRetry || undefined)
-        }
-        
-        // Process retry response
-        const retryContentType = retryResponse.headers.get('content-type') || ''
-        let retryData: unknown = null
-        
-        if (retryContentType.includes('application/json')) {
-          try {
-            retryData = await retryResponse.json()
-          } catch {
-            retryData = null
-          }
-        } else {
-          try {
-            retryData = await retryResponse.text()
-          } catch {
-            retryData = null
-          }
-        }
-        
-        if (retryResponse.ok) {
-          if (typeof retryData === 'object' && retryData !== null && 'success' in retryData) {
-            return retryData as ApiResponse<T>
-          }
-          return {
-            success: true,
-            data: retryData as T,
-          }
-        } else {
           return {
             success: false,
-            error: errorFromPayload(retryData, 'Request failed after refresh'),
+            error: errorMessage,
           }
         }
-      }
 
-      /*
-       * Handle other HTTP errors
-       */
-      if (!response.ok) {
-        let errorMessage =
-          'Request failed'
-
-        if (typeof data === 'object' && data !== null) {
-          errorMessage = errorFromPayload(data, errorMessage)
-        } else if (
-          typeof data === 'string' &&
-          data.trim()
+        /*
+         * Backend already returned standard API response:
+         *
+         * {
+         *   success: true,
+         *   data: ...
+         * }
+         */
+        if (
+          typeof data === 'object' &&
+          data !== null &&
+          'success' in data
         ) {
-          errorMessage = data
+          return data as ApiResponse<T>
         }
+
+        /*
+         * Backend returned raw data
+         */
+        return {
+          success: true,
+          data: data as T,
+        }
+      } catch (error: unknown) {
+        console.error(
+          `API request failed: ${url}`,
+          error
+        )
+
+        const message =
+          error instanceof Error &&
+          error.name === 'AbortError'
+            ? 'Server imechelewa kujibu. Tafadhali jaribu tena baada ya muda mfupi.'
+            : error instanceof TypeError
+              ? 'Imeshindikana kuunganisha na server. Hakikisha backend ipo online na CORS/URL zimewekwa sahihi.'
+              : error instanceof Error
+                ? error.message
+                : 'Network error'
 
         return {
           success: false,
-          error: errorMessage,
+          error: message,
+        }
+      } finally {
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
+        // Clean up pending request after completion
+        if (isGetRequest) {
+          this.pendingRequests.delete(requestKey)
         }
       }
+    })()
 
-      /*
-       * Backend already returned standard API response:
-       *
-       * {
-       *   success: true,
-       *   data: ...
-       * }
-       */
-      if (
-        typeof data === 'object' &&
-        data !== null &&
-        'success' in data
-      ) {
-        return data as ApiResponse<T>
-      }
-
-      /*
-       * Backend returned raw data
-       */
-      return {
-        success: true,
-        data: data as T,
-      }
-    } catch (error: unknown) {
-      console.error(
-        `API request failed: ${url}`,
-        error
-      )
-
-      const message =
-        error instanceof Error &&
-        error.name === 'AbortError'
-          ? 'Server imechelewa kujibu. Tafadhali jaribu tena baada ya muda mfupi.'
-          : error instanceof TypeError
-            ? 'Imeshindikana kuunganisha na server. Hakikisha backend ipo online na CORS/URL zimewekwa sahihi.'
-            : error instanceof Error
-              ? error.message
-              : 'Network error'
-
-      return {
-        success: false,
-        error: message,
-      }
-    } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
+    // Store promise for deduplication
+    if (isGetRequest) {
+      this.pendingRequests.set(requestKey, requestPromise)
     }
+
+    return requestPromise
   }
 
   /**
@@ -615,7 +699,7 @@ export class ApiClient {
    */
   async exportFuelRequestsPDF(filters?: Record<string, string>): Promise<Blob> {
     const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : ''
-    const url = `${API_URL}/api/exports/fuel-requests/pdf${queryString}`
+    const url = `${API_URL}/exports/fuel-requests/pdf${queryString}`
     
     const response = await fetch(url, {
       headers: {
@@ -632,7 +716,7 @@ export class ApiClient {
 
   async exportFuelRequestsExcel(filters?: Record<string, string>): Promise<Blob> {
     const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : ''
-    const url = `${API_URL}/api/exports/fuel-requests/excel${queryString}`
+    const url = `${API_URL}/exports/fuel-requests/excel${queryString}`
     
     const response = await fetch(url, {
       headers: {
@@ -649,7 +733,7 @@ export class ApiClient {
 
   async exportAuditLogsPDF(filters?: Record<string, string>): Promise<Blob> {
     const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : ''
-    const url = `${API_URL}/api/exports/audit-logs/pdf${queryString}`
+    const url = `${API_URL}/exports/audit-logs/pdf${queryString}`
     
     const response = await fetch(url, {
       headers: {
@@ -666,7 +750,7 @@ export class ApiClient {
 
   async exportAuditLogsExcel(filters?: Record<string, string>): Promise<Blob> {
     const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : ''
-    const url = `${API_URL}/api/exports/audit-logs/excel${queryString}`
+    const url = `${API_URL}/exports/audit-logs/excel${queryString}`
     
     const response = await fetch(url, {
       headers: {

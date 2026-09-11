@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle, Clock, FileText, Fuel, ListChecks, XCircle, ArrowRight, X, Info, ChevronDown, type LucideIcon } from 'lucide-react'
@@ -12,6 +12,7 @@ import { RequestCard } from '@/components/requests/RequestCard'
 import { getUserDisplayName, useAuth } from '@/contexts/AuthContext'
 import { formatTanzaniaDate, toTanzaniaIsoString } from '@/lib/dates'
 import { useRequests } from '@/hooks/useRequests'
+import { wsClient } from '@/lib/websocket'
 import type { FuelRequest } from '@/types'
 import { WorkflowGuide, type WorkflowRole } from './WorkflowGuide'
 
@@ -141,6 +142,8 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
   } | null>(null)
   const [roleDetailsOpen, setRoleDetailsOpen] = useState(false)
 
+  const { requests, loading, error, total, refetch } = useRequests({ autoFetch: true, limit: 20, userId: user?.id, enableRealtime: true })
+
   const getDepartmentName = (req: FuelRequest) => {
     const dep = req.department
     if (!dep) return 'N/A'
@@ -149,9 +152,26 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     return 'N/A'
   }
 
-  const { requests, loading, error, total } = useRequests({ autoFetch: true, limit: 20, userId: user?.id })
   const page = copy[role]
   const Icon = page.icon
+
+  // WebSocket real-time updates
+  useEffect(() => {
+    const handleRequestUpdate = (data: any) => {
+      console.log('[RoleDashboard] WebSocket request update received:', data)
+      refetch()
+    }
+
+    wsClient.on('request_updated', handleRequestUpdate)
+    wsClient.on('request_approved', handleRequestUpdate)
+    wsClient.on('request_rejected', handleRequestUpdate)
+
+    return () => {
+      wsClient.off('request_updated', handleRequestUpdate)
+      wsClient.off('request_approved', handleRequestUpdate)
+      wsClient.off('request_rejected', handleRequestUpdate)
+    }
+  }, []) // Removed refetch dependency to prevent infinite loops
 
   const handleStatCardClick = useCallback((label: string) => {
     let filtered = requests

@@ -11,6 +11,7 @@ import { LanguageToggle } from '@/components/i18n/LanguageToggle'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { api } from '@/lib/api'
+import { wsClient } from '@/lib/websocket'
 import { formatTanzaniaDateTime } from '@/lib/dates'
 import { canReceivePushNotifications, onForegroundMessage } from '@/lib/pushNotifications'
 
@@ -42,6 +43,8 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
   const knownNotificationIds = useRef<Set<string>>(new Set())
   const initializedNotifications = useRef(false)
   const dismissTimers = useRef<Record<string, number>>({})
+  const lastFetchTime = useRef<number>(0)
+  const FETCH_COOLDOWN_MS = 5000 // 5 second cooldown between notification fetches
 
   const [notifications, setNotifications] = useState<HeaderNotification[]>([])
 
@@ -150,6 +153,14 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
   const fetchNotifications = async () => {
     if (!authUser) return
 
+    // Add cooldown to prevent excessive fetch calls
+    const now = Date.now()
+    if (now - lastFetchTime.current < FETCH_COOLDOWN_MS) {
+      console.log('[Header] Skipping notification fetch due to cooldown')
+      return
+    }
+    lastFetchTime.current = now
+
     const response = await api.get<HeaderNotification[]>('/notifications?limit=8')
 
     if (!response.success || !response.data) return
@@ -175,7 +186,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
     if (!authUser) return
 
     fetchNotifications()
-    const intervalId = window.setInterval(fetchNotifications, 30000)
+    const intervalId = window.setInterval(fetchNotifications, 60000) // Increased from 30s to 60s to reduce API load
 
     let unsubscribePromise: Promise<(() => void) | null> | null = null
 
@@ -200,11 +211,23 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
             if (current.some((item) => item.id === newNotif.id)) return current
             return [newNotif, ...current].slice(0, 8)
           })
+          
+          // Fetch notifications to sync with backend when push notification arrives
+          // Note: This is intentional to ensure UI sync when notification arrives via FCM
+          fetchNotifications()
         }
       })
     } catch (e) {
       console.warn('Could not set up foreground messaging listener:', e)
     }
+
+    // WebSocket real-time notification updates
+    const handleNotification = (data: any) => {
+      console.log('[Header] WebSocket notification received:', data)
+      fetchNotifications()
+    }
+
+    wsClient.on('notification', handleNotification)
 
     return () => {
       window.clearInterval(intervalId)
@@ -213,6 +236,7 @@ export function Header({ toggleSidebar, user }: HeaderProps) {
           if (unsub) unsub()
         })
       }
+      wsClient.off('notification', handleNotification)
     }
   }, [authUser?.id])
 
