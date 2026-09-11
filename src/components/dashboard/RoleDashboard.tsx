@@ -208,9 +208,27 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
     }
   }, [user?.id, user?.role])
 
-  const handleStatCardClick = useCallback((label: string) => {
+  const handleStatCardClick = useCallback(async (label: string) => {
     let filtered = requests
-    if (label === 'Yanasubiri') {
+    
+    if (label === 'Zilizoshughulikiwa') {
+      // Fetch interacted requests from backend to get complete list
+      try {
+        const response = await api.get<FuelRequest[]>(`/fuel-requests?interacted=true&limit=100`)
+        if (response.success && response.data) {
+          const list = Array.isArray(response.data) ? response.data : []
+          setSelectedFilter({
+            title: label,
+            requests: list,
+          })
+          return
+        }
+      } catch (err) {
+        console.error('Failed to fetch interacted requests:', err)
+      }
+      // Fallback to local filter if API fails
+      filtered = requests.filter((r) => r.userInteraction !== null)
+    } else if (label === 'Yanasubiri') {
       // Filter by role-specific pending status
       const pendingStatus = getPendingStatusForRole(role)
       filtered = requests.filter((r) => r.status === pendingStatus)
@@ -220,10 +238,6 @@ export function RoleDashboard({ role }: { role: RoleDashboardKey }) {
       filtered = requests.filter((request) => completedStatuses.includes(request.status))
     } else if (label === 'Jumla ya Lita') {
       filtered = requests.filter((request) => litres(request) > 0)
-    } else if (label === 'Zilizoshughulikiwa') {
-      // Show requests user has interacted with (has approval record)
-      // This is separate from current pending work
-      filtered = requests.filter((r) => r.userInteraction !== null)
     }
 
     setSelectedFilter({

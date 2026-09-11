@@ -109,4 +109,5 @@ export interface RequestFilter {
   dateFrom?: Date
   dateTo?: Date
   vehicleNumber?: string
+  interacted?: boolean
 }

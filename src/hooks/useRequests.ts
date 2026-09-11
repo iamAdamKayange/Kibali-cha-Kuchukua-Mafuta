@@ -96,6 +96,7 @@ export function useRequests(options: UseRequestsOptions = {}): UseRequestsReturn
       if (currentFilters.status) queryParams.append('status', currentFilters.status)
       if (currentFilters.dateFrom) queryParams.append('fromDate', currentFilters.dateFrom.toISOString())
       if (currentFilters.dateTo) queryParams.append('toDate', currentFilters.dateTo.toISOString())
+      if (currentFilters.interacted) queryParams.append('interacted', 'true')
 
       const response = await api.get<FuelRequest[]>(`/fuel-requests?${queryParams.toString()}`)
 
